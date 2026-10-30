@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.1.2 — 2026-10-30
+- Harness: `session.error` captured per run; runs that did not finish cleanly are excluded from the scorecard and listed; `adlc eval` aborts on the first session error (quota exhaustion) instead of burning the matrix.
+
 ## 0.1.1 — 2026-10-30
 - Edit tasks carry overlay tests (fail before / pass after the reference fix) and `setup_command`.
 - `adlc eval --judge-only`, `adlc stale --all` (repo + project + org), `adlc regress --repo`, `adlc scorecard --aggregate`.

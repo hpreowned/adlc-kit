@@ -4,7 +4,7 @@ name: adlc-regress
 on:
   workflow_call:
     inputs:
-      kit-ref: { type: string, default: "v0.1.1" }
+      kit-ref: { type: string, default: "v0.1.2" }
       arm: { type: string, default: "graphify" }
     secrets:
       COPILOT_GITHUB_TOKEN: { required: true }
