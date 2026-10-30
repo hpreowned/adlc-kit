@@ -1,0 +1,21 @@
+id: svc-006
+repo: kestrel-services
+cwd: gateway
+category: literal
+languages: [python]
+tier: 1
+prompt: |
+  What is the default timeout for the gateway's calls to booking and pricing, and which
+  environment variable overrides it?
+expected: |
+  The environment variable is GATEWAY_TIMEOUT_SECONDS. It maps to Settings.gateway_timeout_seconds
+  in gateway/gateway/config.py, default 5.0 seconds, validated to be greater than zero. main.py
+  passes it to the httpx clients for booking and pricing (connect timeout capped at 2 s).
+rubric: |
+  2 = GATEWAY_TIMEOUT_SECONDS + default 5 seconds + config.py (Settings field);
+  1 = gets the variable or the default but not both, or no file;
+  0 = wrong variable or wrong default.
+judge: rubric
+test_command: null
+federated: false
+grep_bait: ["GATEWAY_TIMEOUT_SECONDS"]

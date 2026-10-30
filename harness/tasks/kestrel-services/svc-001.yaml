@@ -1,0 +1,24 @@
+id: svc-001
+repo: kestrel-services
+cwd: gateway
+category: literal
+languages: [python]
+tier: 1
+prompt: |
+  A customer screenshot shows the public API answering with "booking temporarily
+  unavailable". Where in the gateway is that message defined, and which HTTP status
+  and machine code go with it?
+expected: |
+  gateway/gateway/errors.py: class BookingUnavailable (a subclass of UpstreamUnavailable)
+  sets default_detail = "booking temporarily unavailable" and code = "booking_unavailable";
+  the HTTP status is 503, inherited from UpstreamUnavailable. It is raised from
+  gateway/gateway/clients/booking.py (BookingClient.translate_status for booking's 429,
+  plus unavailable_error for transport failures and an open circuit breaker).
+rubric: |
+  2 = names errors.py / BookingUnavailable AND the 503 status AND code booking_unavailable;
+  1 = finds the message in errors.py but misses the status or the code;
+  0 = wrong file, or only finds the test assertions.
+judge: rubric
+test_command: null
+federated: false
+grep_bait: ["booking temporarily unavailable"]

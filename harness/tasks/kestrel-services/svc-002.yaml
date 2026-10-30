@@ -1,0 +1,26 @@
+id: svc-002
+repo: kestrel-services
+cwd: booking
+category: locate
+languages: [java]
+tier: 2
+prompt: |
+  In the booking service, where does an incoming create or reserve request actually get
+  rate limited per carrier, and where does a rejection turn into the HTTP 429 response?
+expected: |
+  Enforcement is in the service layer, not a filter or controller:
+  booking/src/main/java/com/kestrel/booking/service/BookingService.java calls
+  rateLimiter.acquire(carrier.getCode()) in both create() and reserve(). CarrierRateLimiter.acquire
+  (ratelimit/CarrierRateLimiter.java) draws a token from that carrier's own TokenBucket
+  (ratelimit/TokenBucket.java) and throws CarrierCapacityExhaustedException when empty.
+  ApiExceptionHandler.capacityExhausted (web/ApiExceptionHandler.java) maps it to 429 with a
+  Retry-After header and the "carrier capacity exhausted" error string.
+rubric: |
+  2 = BookingService create/reserve call sites + CarrierRateLimiter/TokenBucket + the
+      ApiExceptionHandler 429 mapping;
+  1 = finds CarrierRateLimiter but not the call sites or not the exception-to-429 mapping;
+  0 = points at the controller, a filter, or the wrong class.
+judge: rubric
+test_command: null
+federated: false
+grep_bait: ["rate limit", "RateLimiter"]

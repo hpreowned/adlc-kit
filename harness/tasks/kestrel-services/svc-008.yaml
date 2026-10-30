@@ -1,0 +1,26 @@
+id: svc-008
+repo: kestrel-services
+cwd: gateway
+category: edit
+languages: [python]
+tier: 1
+prompt: |
+  Booking now returns eta_confidence on shipments, but the gateway silently drops it
+  before it reaches the web app. Add it to the gateway's shipment response model so it
+  passes through when booking sends it and is still fine when booking omits it (flag off or
+  older booking). It is a number between 0 and 1. Existing tests that pin the exact public
+  field set will need updating; add a test for present and absent. pytest must pass.
+expected: |
+  gateway/gateway/models.py: ShipmentOut gains eta_confidence: float | None, default None,
+  constrained to 0..1 (e.g. Field(default=None, ge=0.0, le=1.0)). BookingClient already
+  parses responses with ShipmentOut, so no other code change is needed. Existing tests
+  tests/test_models.py and tests/test_shipments_routes.py pin the old field set and must be
+  updated; new tests cover the field present and absent.
+rubric: |
+  Judged by test_command (exit 0). 2 = exits 0 with the field optional and bounded 0..1 and
+  new present/absent tests; 1 = exits 0 only because pin tests were weakened or deleted;
+  0 = non-zero exit or the field is required.
+judge: tests
+test_command: .venv/bin/pytest -q
+federated: false
+grep_bait: ["eta_confidence"]

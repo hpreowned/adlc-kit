@@ -13,4 +13,6 @@ jobs:
       - run: uv tool install --python 3.12 "git+https://github.com/kestrel-freight/adlc-kit@${{ inputs.kit-ref }}"
       - run: adlc scorecard --trend --results monitor --out monitor/trend.md || true
       - uses: actions/upload-artifact@v4
-        with: { name: adlc-scorecard-${{ github.repository_id }}, path: monitor/ }
+        with:
+          name: adlc-scorecard-${{ github.repository_id }}
+          path: monitor/

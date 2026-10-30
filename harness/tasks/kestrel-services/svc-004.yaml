@@ -1,0 +1,28 @@
+id: svc-004
+repo: kestrel-services
+cwd: gateway
+category: trace
+languages: [python]
+tier: 1
+prompt: |
+  Which of the gateway's calls to booking and pricing get retried automatically when they
+  fail, how many attempts do they get, and where is that decision made?
+expected: |
+  Attempts come from GATEWAY_RETRY_ATTEMPTS (Settings.gateway_retry_attempts, default 3,
+  gateway/gateway/config.py) via RetryPolicy built in gateway/gateway/main.py, with
+  exponential backoff and jitter (gateway/gateway/retry.py). UpstreamClient.request
+  (gateway/gateway/clients/base.py) passes an idempotent flag to is_retryable_error:
+  connect failures are always retried; 502/503/504 and other transport errors or timeouts
+  only when idempotent. Default idempotent = GET/HEAD/PUT/DELETE/OPTIONS. Overrides:
+  BookingClient.reserve_shipment is idempotent=False so reserve is never retried (GW-96);
+  create_shipment is retryable only when the payload carries a reference; PricingClient.quote
+  is POST but idempotent=True. Booking 429s are translated and not retried.
+rubric: |
+  2 = decision point (base.py + retry.py), default 3 attempts, AND the reserve=never /
+      create=only-with-reference / quote=yes distinction;
+  1 = describes retry policy and attempts but misses the per-call idempotent overrides;
+  0 = says everything or nothing is retried.
+judge: rubric
+test_command: null
+federated: false
+grep_bait: ["idempotent", "RetryPolicy"]

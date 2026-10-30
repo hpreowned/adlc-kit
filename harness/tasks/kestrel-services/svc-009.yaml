@@ -1,0 +1,26 @@
+id: svc-009
+repo: kestrel-services
+cwd: pricing
+category: edit
+languages: [csharp]
+tier: 2
+prompt: |
+  The fuel surcharge in pricing rounds with plain Math.Round, which uses banker's rounding,
+  while the rest of pricing rounds half away from zero. Make the fuel surcharge follow the
+  same rule as everything else (use the shared money rounding helper). The existing
+  FuelSurchargeRoundingTests assert the old midpoint-to-even behaviour; update their
+  expectations to the new behaviour as part of the fix. dotnet test must pass.
+expected: |
+  In pricing/src/Kestrel.Pricing/Calculation/QuoteCalculator.cs, ApplyFuelSurcharge returns
+  Money.Round(value) (MidpointRounding.AwayFromZero) instead of Math.Round(value, 2), so
+  4.125 becomes 4.13. pricing/tests/Kestrel.Pricing.Tests/FuelSurchargeRoundingTests.cs
+  is updated: the midpoint theory cases and the Calculate_FuelLine test now expect 4.13
+  (quote total 37.13), and the NotEqual assertion is removed or inverted.
+rubric: |
+  Judged by test_command (exit 0). 2 = exits 0 with ApplyFuelSurcharge going through
+  Money.Round and the test expectations changed to AwayFromZero; 1 = exits 0 but the tests
+  were deleted or the rounding was inlined rather than using Money.Round; 0 = non-zero exit.
+judge: tests
+test_command: dotnet test
+federated: false
+grep_bait: ["Math.Round"]

@@ -1,0 +1,26 @@
+id: svc-003
+repo: kestrel-services
+cwd: gateway
+category: trace
+languages: [python]
+tier: 1
+prompt: |
+  I'm tidying the gateway's legacy/ package, which holds the old local pricing formula
+  from before the pricing service existed. What depends on it, and what would break if I
+  deleted it?
+expected: |
+  Nothing depends on it: no module under gateway/ or tests/ imports the pricing_v1 module,
+  nothing loads it dynamically (no importlib or __import__) or by name from settings or
+  pyproject, and quotes go through PricingClient to pricing's /v1/quote instead. Only the
+  gateway README layout listing mentions legacy/. Deleting it breaks nothing; it is dead
+  code (ticket GW-102, still open in kestrel-ops). Unlike pricing's LegacyTariffLoader,
+  nothing selects it by name from configuration.
+rubric: |
+  2 = says it is dead / nothing imports it, AND shows it checked dynamic or config loading
+      (or cites GW-102), so deletion is safe;
+  1 = says nothing imports it but does not rule out dynamic or config-based loading;
+  0 = claims something uses it, or says it must not be deleted.
+judge: rubric
+test_command: null
+federated: false
+grep_bait: ["pricing_v1", "legacy"]

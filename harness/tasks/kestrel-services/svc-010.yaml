@@ -1,0 +1,26 @@
+id: svc-010
+repo: kestrel-services
+cwd: booking
+category: edit
+languages: [java]
+tier: 2
+prompt: |
+  The shipments table has a foreign key to carriers, but the JPA Shipment entity only has a
+  plain carrier id column, so Hibernate knows nothing about the relationship. Declare the
+  missing many-to-one relation to Carrier on the entity without changing the JSON contract
+  or the existing carrierId usages, and keep the booking test suite green.
+expected: |
+  booking/src/main/java/com/kestrel/booking/domain/Shipment.java gains a
+  @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "carrier_id") Carrier field. Because
+  the existing @Column(name = "carrier_id") Long carrierId stays (repository queries and
+  BookingService use it), the new mapping must be read-only (insertable = false,
+  updatable = false) or carrierId must be removed and its usages migrated. ShipmentResponse
+  JSON (carrier_code) is unchanged and mvn -q test passes (JDK 21).
+rubric: |
+  Judged by test_command (exit 0). 2 = exits 0 with a lazy @ManyToOne/@JoinColumn on carrier_id
+  and no duplicate-column mapping error; 1 = exits 0 but via a workaround that leaves the
+  relation unmapped; 0 = non-zero exit.
+judge: tests
+test_command: mvn -q test
+federated: false
+grep_bait: ["ManyToOne", "JoinColumn"]

@@ -1,0 +1,30 @@
+id: svc-005
+repo: kestrel-services
+cwd: booking
+category: archaeology
+languages: [java, docs]
+tier: 3
+prompt: |
+  BookingService.reserve() takes a lock keyed on the shipment reference before it even
+  checks the status, and there is no comment saying why. What problem was that added to
+  solve, and what alternatives were rejected?
+expected: |
+  Added after the 2026-06-14 double-booking incident (postmortems/2026-06-14-double-booking.md
+  in kestrel-ops; follow-up ticket BOOK-398). Two concurrent reserve calls both saw CREATED
+  and both placed carrier capacity holds, because reserve() is a read-check-write sequence
+  and the unique index on shipments.reference only protects creation. Longer NSL hold
+  timeouts, gateway retries and Reserve double-clicks made it routine: 23 shipments held
+  twice, EUR 410 in no-show fees. Fix: a transaction-scoped PostgreSQL advisory lock
+  (pg_advisory_xact_lock, via the AdvisoryLock interface) keyed by reference. Rejected:
+  optimistic locking with @Version (conflict found only after the carrier hold is placed)
+  and SELECT ... FOR UPDATE (blocks other writers for the whole carrier call).
+rubric: |
+  2 = cites the 2026-06-14 incident/BOOK-398 AND the read-check-write race AND at least
+      one rejected alternative (optimistic locking or FOR UPDATE);
+  1 = identifies the double-booking incident or the race but not the rejected alternatives
+      or the source document;
+  0 = guesses generic "thread safety" with no incident, or cannot find the reason.
+judge: rubric
+test_command: null
+federated: true
+grep_bait: ["advisory", "AdvisoryLock"]

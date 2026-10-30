@@ -20,4 +20,6 @@ jobs:
         with: { fetch-depth: 0 }
       - run: adlc regress --arm ${{ inputs.arm }} --runs 3 --out monitor/trend.jsonl
       - uses: actions/upload-artifact@v4
-        with: { name: adlc-trend-${{ github.repository_id }}, path: monitor/trend.jsonl }
+        with:
+          name: adlc-trend-${{ github.repository_id }}
+          path: monitor/trend.jsonl

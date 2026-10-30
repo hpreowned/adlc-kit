@@ -1,0 +1,25 @@
+id: svc-007
+repo: kestrel-services
+cwd: .
+category: cross-repo
+languages: [java, python, typescript]
+tier: 3
+prompt: |
+  Which services and apps call booking's POST /v2/shipments, and what path does a browser
+  request take to reach it?
+expected: |
+  The only direct caller is the gateway: BookingClient.create_shipment in
+  gateway/gateway/clients/booking.py, reached from the create_shipment route in
+  gateway/gateway/routes/shipments.py (POST /api/shipments). The web app (kestrel-web,
+  src/api/client.ts createShipment, route /api/shipments) reaches booking only transitively
+  through the gateway, since browsers talk only to the gateway. On the booking side the
+  endpoint is ShipmentController.create, which delegates to BookingService.create.
+rubric: |
+  2 = gateway client as the direct consumer AND web via /api/shipments as the transitive
+      consumer, with the route chain;
+  1 = names only the gateway, or claims the web app calls booking directly;
+  0 = wrong or no consumers.
+judge: rubric
+test_command: null
+federated: true
+grep_bait: ["/v2/shipments"]
