@@ -53,3 +53,12 @@ def test_aggregate_renders_three_repos(tmp_path):
         (d / "trend.jsonl").write_text("\n".join(json.dumps(r) for r in rows) + "\n")
     md = render_aggregate(tmp_path)
     assert md.count("| kestrel-") == 3 and "⚠" in md and "▁" in md or "█" in md
+
+
+def test_invalid_runs_are_excluded_and_listed(tmp_path):
+    from harness.scorecard import load_records, invalid_records
+    good = _rec("t", "baseline", 1, 100, 2); bad = {**_rec("t", "graphify", 1, 5, None), "session_error": "quota", "exit_code": 1, "answer": ""}
+    (tmp_path / "x.jsonl").write_text(json.dumps(good) + "\n" + json.dumps(bad) + "\n")
+    assert len(load_records(tmp_path)) == 1 and len(invalid_records(tmp_path)) == 1
+    md = render_md(load_records(tmp_path), None, [], invalid_records(tmp_path))
+    assert "Excluded: 1 invalid run" in md and "quota" in md

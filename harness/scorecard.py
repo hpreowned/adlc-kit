@@ -10,13 +10,25 @@ from pathlib import Path
 METRICS = ("prompt_tokens", "input_tokens", "output_tokens", "cache_read_tokens", "model_calls", "premium_requests", "wall_ms", "api_duration_ms", "turns", "bytes_read")
 
 
-def load_records(results: Path) -> list[dict]:
+def is_valid(r: dict) -> bool:
+    """A run counts only if Copilot finished cleanly. A quota/session error or a non-zero
+    exit with no answer is an invalid run, listed separately — never silently pooled."""
+    if r.get("valid") is False or r.get("session_error"):
+        return False
+    return not (r.get("exit_code", 0) != 0 and not r.get("answer"))
+
+
+def load_records(results: Path, include_invalid: bool = False) -> list[dict]:
     recs = []
     for p in sorted(results.glob("*.jsonl")):
         for line in p.read_text().splitlines():
             if line.strip():
                 recs.append(json.loads(line))
-    return recs
+    return recs if include_invalid else [r for r in recs if is_valid(r)]
+
+
+def invalid_records(results: Path) -> list[dict]:
+    return [r for r in load_records(results, include_invalid=True) if not is_valid(r)]
 
 
 def _p(vals: list[float], q: float) -> float | None:

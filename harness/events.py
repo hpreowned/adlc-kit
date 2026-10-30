@@ -37,6 +37,7 @@ class RunMetrics:
     lines_added: int = 0
     lines_removed: int = 0
     skills_invoked: list[str] = field(default_factory=list)
+    session_error: str | None = None            # session.error message (e.g. quota exhausted)
     shutdown_seen: bool = False
     unknown_event_types: dict[str, int] = field(default_factory=dict)
     event_count: int = 0
@@ -102,6 +103,8 @@ def parse_events(lines) -> RunMetrics:
             cost += float(u.get("cost") or 0)
             if u.get("model") and u["model"] not in m.models:
                 m.models.append(u["model"])
+        elif t == "session.error":
+            m.session_error = str(d.get("message") or d.get("content") or d)[:300]
         elif t == "skill.invoked":
             m.skills_invoked.append(d.get("name", "?"))
         elif t == "session.shutdown":

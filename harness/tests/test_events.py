@@ -42,3 +42,9 @@ def test_find_events_file(tmp_path):
     d.mkdir(parents=True)
     (d / "events.jsonl").write_text("{}\n")
     assert find_events_file(tmp_path) == d / "events.jsonl"
+
+
+def test_session_error_is_captured():
+    m = parse_events(['{"type":"session.error","data":{"message":"You have exceeded your monthly quota"}}',
+                      '{"type":"session.shutdown","data":{"tokenDetails":{}}}'])
+    assert m.session_error.startswith("You have exceeded") and m.shutdown_seen

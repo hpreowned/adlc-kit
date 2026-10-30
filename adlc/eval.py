@@ -83,6 +83,12 @@ def run_eval(args) -> int:
                 spec = RunSpec(task=t, arm=arm, run=r, repo_dir=repo_dir, baseline_sha=sha, results_dir=results,
                                project_graph=project_graph, timeout=args.timeout, model=args.model, tasks_root=_tasks_root(args))
                 res = execute(spec, driver)
+                if res.record.get("session_error"):
+                    with out.open("a") as fh:
+                        fh.write(json.dumps({**res.record, "dry_run": bool(args.dry_run)}) + "\n")
+                    print(f"{rid}: ABORTING — Copilot session error: {res.record['session_error']}")
+                    print("eval: stopped early; records so far are kept, the failed run is marked invalid. Re-run resumes.")
+                    return 3
                 rec = J.judge_record(res.record, t, judge)
                 rec["dry_run"] = bool(args.dry_run)
                 (res.raw_dir / "record.json").write_text(json.dumps(rec, indent=2))

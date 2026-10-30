@@ -258,6 +258,7 @@ def execute(spec: RunSpec, driver=None) -> RunResult:
         "models": metrics.models, "copilot_version": metrics.copilot_version, "turns": metrics.turns,
         "tool_calls": metrics.tool_calls, "mcp_tool_calls": metrics.mcp_tool_calls, "bytes_read": metrics.bytes_read,
         "skills_invoked": metrics.skills_invoked, "graph_queries": _count_lines(ql),
+        "session_error": metrics.session_error, "valid": metrics.session_error is None and rc == 0,
         "freshness_exit": freshness.exit_code, "freshness_behind": freshness.behind,
         "answer": scrub_text(final_answer(stdout), roots)[:6000], "judge_score": None,
         **edit, "raw": str(raw_dir.relative_to(spec.results_dir)),
