@@ -51,6 +51,10 @@ def lint_task(t: dict, repos_root: Path | None) -> list[str]:
     is_edit = t["category"] == "edit"
     if is_edit != (t["judge"] == "tests") or is_edit != bool(t.get("test_command")):
         errs.append("edit ⇔ judge: tests ⇔ test_command")
+    if is_edit and not t.get("overlay"):
+        errs.append("edit task needs an `overlay` dir of tests that fail before the fix")
+    if t.get("overlay") and not (Path(t["_path"]).parent.parent / t["overlay"]).exists():
+        errs.append(f"overlay dir {t['overlay']} missing")
     if t["category"] == "cross-project" and not t.get("federated"):
         errs.append("cross-project tasks must set federated: true")
     if str(t["expected"]).strip().lower() in str(t["prompt"]).lower():

@@ -44,7 +44,9 @@ def render(pins: dict, locked: dict[str, str]) -> str:
         f"| Python | {pins['python']} | pyproject.toml |",
     ]
     for lang, ls in pins["language_servers"].items():
-        rows.append(f"| LSP {lang} | {ls['name']} {ls['version']} | adlc/pins.json |")
+        if lang.startswith("_"):
+            continue
+        rows.append(f"| LSP {lang} | {ls['name']} {ls['version']} | pinned by Serena commit |")
     rows.append("")
     rows.append("## Locked Python packages (uv.lock)\n")
     for name in sorted(locked):

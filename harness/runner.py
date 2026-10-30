@@ -34,6 +34,7 @@ class RunSpec:
     project_graph: Path | None = None
     timeout: int = 900
     model: str | None = None
+    tasks_root: Path | None = None
 
 
 @dataclass
@@ -170,11 +171,38 @@ def result_event(stdout: str) -> dict:
     return {}
 
 
-def diff_and_tests(wc: Path, task: dict, env: dict) -> dict:
+def run_setup(wc: Path, task: dict, env: dict) -> dict:
+    """Environment preparation that is NOT part of the measurement (venv, npm ci)."""
+    cmd = task.get("setup_command")
+    if not cmd:
+        return {}
+    r = subprocess.run(cmd, shell=True, cwd=wc / task.get("cwd", "."), env=env, capture_output=True, text=True, timeout=900)
+    return {"setup_ok": r.returncode == 0}
+
+
+def apply_overlay(wc: Path, task: dict, tasks_root: Path | None) -> int:
+    """Edit tasks: copy the task's overlay tests into the working copy AFTER the agent
+    ran, so the tests can tell 'fixed' from 'did nothing' (they fail on the pristine repo)."""
+    rel = task.get("overlay")
+    if not rel or tasks_root is None:
+        return 0
+    src = tasks_root / rel
+    n = 0
+    for f in src.rglob("*"):
+        if f.is_file():
+            dest = wc / task.get("cwd", ".") / f.relative_to(src)
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy(f, dest)
+            n += 1
+    return n
+
+
+def diff_and_tests(wc: Path, task: dict, env: dict, tasks_root: Path | None = None) -> dict:
     diff = subprocess.run(["git", "-C", str(wc), "diff", "--", ".", ":(exclude).github/hooks", ":(exclude)graphify-out"],
                           capture_output=True, text=True).stdout
     out = {"diff_hash": hashlib.sha256(diff.encode()).hexdigest()[:16] if diff.strip() else None, "diff_lines": diff.count("\n")}
     if task.get("judge") == "tests" and task.get("test_command"):
+        out["overlay_files"] = apply_overlay(wc, task, tasks_root)
         cwd = wc / task.get("cwd", ".")
         try:
             r = subprocess.run(task["test_command"], shell=True, cwd=cwd, env=env, capture_output=True, text=True, timeout=900)
@@ -197,6 +225,7 @@ def execute(spec: RunSpec, driver=None) -> RunResult:
     env = child_env(home, run_dir)
     from adlc.stale import check as stale_check
     freshness = stale_check(spec.repo_dir, "graphify-out/graph.json")  # pristine repo, before arm stripping
+    setup = run_setup(wc, spec.task, env)
     cwd = wc / spec.task.get("cwd", ".")
     t0 = time.time()
     rc, stdout, stderr = driver.run(copilot_args(spec, cfg), cwd, env, spec.timeout)
@@ -212,7 +241,8 @@ def execute(spec: RunSpec, driver=None) -> RunResult:
     ql = run_dir / "queries.log"
     if ql.exists():
         (raw_dir / "queries.log").write_text(scrub_text(ql.read_text(), roots))
-    edit = diff_and_tests(wc, spec.task, env)
+    edit = diff_and_tests(wc, spec.task, env, spec.tasks_root)
+    edit.update(setup)
     record = {
         "run_id": run_id, "task": spec.task["id"], "repo": spec.task["repo"], "category": spec.task["category"],
         "languages": spec.task["languages"], "tier": spec.task["tier"], "arm": spec.arm, "run": spec.run,

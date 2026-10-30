@@ -83,4 +83,12 @@ def run(args) -> int:
     c = C.load(repo)
     s = check(repo, c.artifact, c.stale_threshold)
     print(json.dumps(s.__dict__) if args.json else s.line())
-    return s.exit_code
+    worst = s.exit_code
+    if args.all:
+        from adlc.federate import stale_federated
+        for level in ("project", "org"):
+            try:
+                worst = max(worst, stale_federated(repo, level, as_json=args.json))
+            except SystemExit as e:  # no federated graph reachable from here — report, don't fail
+                print(f"[{level}] not configured ({e})")
+    return worst

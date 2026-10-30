@@ -15,6 +15,9 @@ rubric: |                        # what the judge scores 0/1/2 against (arm neve
   2 = names money.ts callers AND the MoneyText/QuoteBreakdown UI path; 1 = only money.ts; 0 = wrong/none.
 judge: rubric                    # rubric | tests
 test_command: null               # edit tasks: command that must exit 0 in the working copy after the edit
+setup_command: null              # optional, run in cwd BEFORE the agent (venv, npm ci) — environment, not measured
+overlay: null                    # edit tasks: dir (relative to the tasks root) copied into cwd AFTER the agent, before
+                                 #   test_command; holds tests that FAIL on the pristine repo and PASS after the fix
 federated: false                 # true if the task needs `adlc query --level project|org`
 grep_bait: ["roundMoney"]        # literals a naive grep would try; lint rejects tasks a single grep answers
                                  #   unless category == literal (where grep SHOULD win)
@@ -22,7 +25,8 @@ grep_bait: ["roundMoney"]        # literals a naive grep would try; lint rejects
 
 Rules enforced by `adlc eval --lint`:
 - required keys present, enum values valid, `tier` matches languages (1: python/typescript only; 2: java/csharp; 3: docs/federated/both).
-- `judge: tests` ⇔ `category: edit` ⇔ `test_command` set.
+- `judge: tests` ⇔ `category: edit` ⇔ `test_command` set; edit tasks must also set `overlay`
+  (verified: overlay tests fail on the pristine repo and pass after the reference fix).
 - no task is answerable from its prompt alone: `expected` must not be a substring of `prompt`.
 - second-pass grep rule: for non-`literal` tasks, every `grep_bait` string run through
   `rg -l` in the repo must NOT by itself produce the files named in `expected`

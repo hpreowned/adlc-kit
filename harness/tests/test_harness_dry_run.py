@@ -127,3 +127,13 @@ def test_arm_strip_removes_other_context(repo, tmp_path):
         wc = prepare_working_copy(spec, tmp_path / f"run-{arm}")
         assert all(not (wc / g).exists() for g in gone), arm
         assert all((wc / k).exists() for k in kept), arm
+
+
+def test_overlay_and_setup_run_for_edit_tasks(repo, tmp_path):
+    tasks_root = tmp_path / "tasks"
+    (tasks_root / "repo" / "t-002.overlay").mkdir(parents=True)
+    (tasks_root / "repo" / "t-002.overlay" / "extra_check.sh").write_text("test -f SETUP_RAN\n")
+    task = {**EDIT, "overlay": "repo/t-002.overlay", "setup_command": "touch SETUP_RAN", "test_command": "sh extra_check.sh"}
+    spec = RunSpec(task=task, arm="baseline", run=1, repo_dir=repo, baseline_sha=_sha(repo), results_dir=tmp_path / "r", tasks_root=tasks_root)
+    rec = execute(spec, StubDriver(FIX)).record
+    assert rec["setup_ok"] is True and rec["overlay_files"] == 1 and rec["tests_passed"] is True

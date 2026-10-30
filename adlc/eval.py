@@ -81,7 +81,7 @@ def run_eval(args) -> int:
                 if rid in done:
                     continue
                 spec = RunSpec(task=t, arm=arm, run=r, repo_dir=repo_dir, baseline_sha=sha, results_dir=results,
-                               project_graph=project_graph, timeout=args.timeout, model=args.model)
+                               project_graph=project_graph, timeout=args.timeout, model=args.model, tasks_root=_tasks_root(args))
                 res = execute(spec, driver)
                 rec = J.judge_record(res.record, t, judge)
                 (res.raw_dir / "record.json").write_text(json.dumps(rec, indent=2))
@@ -115,12 +115,33 @@ def add_parser(sub) -> None:
     p.add_argument("--model", default=None, help="pin Copilot model for agent runs (default auto)")
     p.add_argument("--judge-model", default=None)
     p.add_argument("--adoption-test", default=None, metavar="REPO", help="Phase 8 timed walkthrough (see adlc/adoption.py)")
+    p.add_argument("--judge-only", default=None, metavar="RESULTS_JSONL", help="(re)judge records in a results file; arm never passed to the judge")
+    p.add_argument("--rejudge", action="store_true", help="with --judge-only: re-score even already-judged records")
     p.set_defaults(func=run)
+
+
+def judge_only(args) -> int:
+    from harness import judge as J
+    from harness.tasklint import load_tasks
+    path = Path(args.judge_only)
+    tasks = {t["id"]: t for t in load_tasks(_tasks_root(args))}
+    judge = J.StubJudge() if args.dry_run else J.CopilotJudge(model=args.judge_model)
+    recs = [json.loads(l) for l in path.read_text().splitlines() if l.strip()]
+    n = 0
+    for r in recs:
+        if r.get("judge_score") is None or args.rejudge:
+            J.judge_record(r, tasks[r["task"]], judge)
+            n += 1
+    path.write_text("".join(json.dumps(r) + "\n" for r in recs))
+    print(f"judged {n} record(s) in {path}")
+    return 0
 
 
 def run(args) -> int:
     if args.lint:
         return lint(args)
+    if args.judge_only:
+        return judge_only(args)
     if args.adoption_test:
         from adlc.adoption import run_adoption
         return run_adoption(Path(args.adoption_test).resolve(), Path(args.results).resolve())
