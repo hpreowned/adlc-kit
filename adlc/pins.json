@@ -54,7 +54,7 @@
   "python": "3.12",
   "kit": {
     "repo": "kestrel-freight/adlc-kit",
-    "ref": "v0.1.0",
+    "ref": "v0.1.1",
     "devcontainer_image": "ghcr.io/kestrel-freight/adlc-devcontainer:0.1.0"
   }
 }

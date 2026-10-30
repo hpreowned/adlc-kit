@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.1 — 2026-10-30
+- Edit tasks carry overlay tests (fail before / pass after the reference fix) and `setup_command`.
+- `adlc eval --judge-only`, `adlc stale --all` (repo + project + org), `adlc regress --repo`, `adlc scorecard --aggregate`.
+- Arm purity: the harness strips the other context's files from the working copy and filters the routing section per arm.
+- Headline token metric is prompt tokens (input + cache read + cache write); Copilot's `input.tokenCount` alone is the uncached slice.
+- `adlc federate` can write to an out dir (tests no longer touch the committed graph); workflow YAML fixes; PINS.md generated from uv.lock.
+- No adoption-test deviations were found; this tag is a feature release, not a fix release.
+
 ## 0.1.0 — 2026-10-30
 - First distributable. Schema 1.
 - `adlc init|doctor|baseline|stale|lint|upgrade|pins|federate|query|eval|regress|scorecard|guard-hook`.

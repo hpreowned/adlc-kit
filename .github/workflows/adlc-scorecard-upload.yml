@@ -3,7 +3,7 @@ name: adlc-scorecard-upload
 on:
   workflow_call:
     inputs:
-      kit-ref: { type: string, default: "v0.1.0" }
+      kit-ref: { type: string, default: "v0.1.1" }
 jobs:
   upload:
     runs-on: ubuntu-latest
