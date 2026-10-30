@@ -35,5 +35,10 @@ def test_replace_block_roundtrip_keeps_prose():
     assert out.count("```yaml") == 1
 
 
-def test_referenced_paths():
-    assert C.referenced_paths(AGENTS) == ["docs"]
+def test_referenced_paths(tmp_path):
+    (tmp_path / "docs").mkdir()
+    text = AGENTS + "\nSee `docs/adr/0001.md`, `adr/NNNN-slug.md`, `other-repo:x.md`, `Makefile`, `pom.xml`, e.g. `vs`.\n"
+    got = C.referenced_paths(text, tmp_path)
+    assert "docs/adr/0001.md" in got and "pom.xml" in got
+    assert not any("NNNN" in g or "other-repo" in g for g in got)
+    assert "vs" not in got

@@ -34,7 +34,7 @@ def lint(repo: Path) -> tuple[list[str], list[str]]:
         fails.append("CONTEXT ROUTING section missing (kit-owned; `adlc init` restores it)")
     if "TODO" in text:
         warns.append("AGENTS.md still has TODO placeholders")
-    for p in C.referenced_paths(text):
+    for p in C.referenced_paths(text, repo):
         if not (repo / p).exists():
             fails.append(f"AGENTS.md references `{p}` which does not exist")
     if (repo / ".github" / "copilot-instructions.md").exists():
@@ -47,7 +47,15 @@ def lint(repo: Path) -> tuple[list[str], list[str]]:
         if not mcp.exists():
             fails.append(".mcp.json missing but context includes serena")
         else:
-            entry = json.loads(mcp.read_text()).get("mcpServers", {}).get("serena", {})
+            servers = json.loads(mcp.read_text()).get("mcpServers", {})
+            for name, srv in servers.items():
+                if srv.get("type") not in (None, "local", "stdio"):
+                    fails.append(f".mcp.json server `{name}` is {srv.get('type')} — hosted MCP is not allowed (GUARDRAILS 5)")
+                if "graphify.com" in json.dumps(srv):
+                    fails.append(f".mcp.json server `{name}` points at Graphify Cloud (GUARDRAILS 5)")
+                if name != "serena":
+                    fails.append(f".mcp.json server `{name}` has no entry in policy/CLI_FIRST.md")
+            entry = servers.get("serena", {})
             args = " ".join(entry.get("args", []))
             if pins["serena"]["commit"] not in args:
                 fails.append(f".mcp.json serena pin != kit pin {pins['serena']['commit'][:12]}")
@@ -57,12 +65,31 @@ def lint(repo: Path) -> tuple[list[str], list[str]]:
             fails.append(".serena/adlc-context.yml missing (Serena tool trim)")
     if "graphify" in c.context and not (repo / ".github" / "skills" / "graphify" / "SKILL.md").exists():
         fails.append(".github/skills/graphify/SKILL.md missing")
+    warns += sensitive_edit_warnings(repo, c)
     wf = repo / ".github" / "workflows" / "adlc.yml"
     if not wf.exists():
         fails.append(".github/workflows/adlc.yml missing")
     elif pins["kit"]["ref"] not in wf.read_text():
         warns.append(f"workflow does not reference kit ref {pins['kit']['ref']}")
     return fails, warns
+
+
+def sensitive_edit_warnings(repo: Path, c: C.Contract, base: str = "origin/main") -> list[str]:
+    """GUARDRAILS 12: commits touching `sensitive:` paths must cite a ticket id."""
+    import re
+    import subprocess
+    if not c.sensitive:
+        return []
+    r = subprocess.run(["git", "-C", str(repo), "log", "--format=%H %s", f"{base}..HEAD", "--", *c.sensitive],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        return []
+    out = []
+    for line in r.stdout.splitlines():
+        sha, _, subject = line.partition(" ")
+        if not re.search(r"\b[A-Z]{2,6}-\d+\b", subject):
+            out.append(f"commit {sha[:8]} touches a sensitive path without a ticket id: {subject!r}")
+    return out
 
 
 def add_parser(sub) -> None:

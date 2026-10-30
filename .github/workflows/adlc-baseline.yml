@@ -1,0 +1,30 @@
+# Reusable: on merge to main rebuild the L0 graph (code only, no LLM), stamp it, commit
+# graphify-out/ + derived memories back, then notify the project repo to re-federate.
+name: adlc-baseline
+on:
+  workflow_call:
+    inputs:
+      kit-ref: { type: string, default: "v0.1.0" }
+      project-repo: { type: string, default: "" }   # owner/name of the L1 project repo
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    permissions: { contents: write }
+    env: { GRAPHIFY_BACKEND: none, GRAPHIFY_NO_TIPS: "1" }
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: astral-sh/setup-uv@v5
+      - run: uv tool install --python 3.12 "git+https://github.com/kestrel-freight/adlc-kit@${{ inputs.kit-ref }}"
+      - run: adlc baseline --no-viz
+      - run: adlc stale
+      - name: commit artifact
+        run: |
+          git config user.name "adlc-bot"; git config user.email "adlc-bot@users.noreply.github.com"
+          git add graphify-out .serena/memories
+          git diff --cached --quiet || git commit -m "adlc: baseline $(git rev-parse --short HEAD~0) [skip ci]"
+          git push
+      - name: notify project repo
+        if: inputs.project-repo != ''
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: gh api repos/${{ inputs.project-repo }}/dispatches -f event_type=adlc-member-baseline -f 'client_payload[repo]=${{ github.repository }}' -f 'client_payload[sha]=${{ github.sha }}'

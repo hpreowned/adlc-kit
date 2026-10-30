@@ -14,6 +14,7 @@ from adlc import __version__
 from adlc import contract as C
 from adlc.gitinfo import head_sha, is_dirty
 from adlc.pins import load_pins
+from adlc.memories import write_memories
 from adlc.stale import STAMP_NAME
 
 
@@ -59,9 +60,8 @@ def build(repo: Path, incremental: bool = False, viz: bool = True) -> dict:
     cluster = ["graphify", "cluster-only", str(repo), "--no-label"] + ([] if viz else ["--no-viz"])
     log += _run(cluster, repo)
     info = stamp(repo, c.artifact, {"mode": mode, "build_seconds": round(time.time() - t0, 1)})
-    root = out_dir / ".graphify_root"
-    if root.exists():  # absolute path; never committed (gitignored by init), harmless locally
-        pass
+    if "serena" in c.context:
+        info["memories"] = [str(p.relative_to(repo)) for p in write_memories(repo, c.artifact)]
     return info
 
 

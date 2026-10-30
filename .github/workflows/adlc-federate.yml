@@ -1,0 +1,24 @@
+# Reusable: runs in the PROJECT repo on repository_dispatch from a member's baseline.
+# Rebuilds the L1 project graph, then dispatches to the org repo for L2.
+name: adlc-federate
+on:
+  workflow_call:
+    inputs:
+      kit-ref: { type: string, default: "v0.1.0" }
+      level: { type: string, default: "project" }
+      org-repo: { type: string, default: "" }
+jobs:
+  federate:
+    runs-on: ubuntu-latest
+    permissions: { contents: write }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv tool install --python 3.12 "git+https://github.com/kestrel-freight/adlc-kit@${{ inputs.kit-ref }}"
+      - run: adlc federate --level ${{ inputs.level }} --fetch
+      - run: |
+          git config user.name "adlc-bot"; git config user.email "adlc-bot@users.noreply.github.com"
+          git add -A && (git diff --cached --quiet || git commit -m "adlc: federate ${{ inputs.level }} [skip ci]") && git push
+      - if: inputs.org-repo != '' && inputs.level == 'project'
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: gh api repos/${{ inputs.org-repo }}/dispatches -f event_type=adlc-project-federated -f 'client_payload[project]=${{ github.repository }}'

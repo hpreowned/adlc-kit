@@ -100,15 +100,22 @@ def replace_block(text: str, contract: Contract) -> str:
     return text[:start] + new + text[end:]
 
 
-def referenced_paths(text: str) -> list[str]:
-    """Backtick-quoted relative paths mentioned in AGENTS.md prose (for drift lint)."""
+def referenced_paths(text: str, repo: Path | None = None) -> list[str]:
+    """Backtick-quoted relative paths in AGENTS.md prose that the drift lint checks.
+
+    Every backticked path must exist in this repo. Convention for paths in OTHER repos:
+    write them as `repo:path` (the colon keeps them out of this check). Placeholders
+    containing NNNN, YYYY, <...> or * are skipped; a single word needs a file extension
+    to count as a path."""
     out = []
-    for m in re.finditer(r"`([A-Za-z0-9_./-]+/[A-Za-z0-9_./-]*|[A-Za-z0-9_-]+\.[a-z]{1,5})`", text):
-        p = m.group(1)
-        if p.startswith(("http", "-", ".")) or p.endswith(":") or "*" in p:
+    for m in re.finditer(r"`([A-Za-z0-9_./-]+)`", text):
+        p = m.group(1).rstrip("/").rstrip(".")
+        if not p or p.startswith(("http", "-", ".")) or re.search(r"NNNN|YYYY|[<>*]", p):
             continue
-        if "/" in p or p.endswith((".md", ".json", ".yml", ".yaml", ".toml", ".sql", ".py", ".ts")):
-            out.append(p.rstrip("/"))
+        if "/" in p:
+            out.append(p)
+        elif re.search(r"\.[a-z]{1,5}$", p) and p not in {"e.g", "i.e", "vs", "etc"}:
+            out.append(p)
     return sorted(set(out))
 
 

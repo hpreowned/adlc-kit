@@ -1,0 +1,23 @@
+# Reusable: weekly + on tool bumps. Runs the 5-task smoke set on the winning arm, 3 runs,
+# appends monitor/trend.jsonl. Needs COPILOT_GITHUB_TOKEN as a repo/org secret.
+name: adlc-regress
+on:
+  workflow_call:
+    inputs:
+      kit-ref: { type: string, default: "v0.1.0" }
+      arm: { type: string, default: "graphify" }
+    secrets:
+      COPILOT_GITHUB_TOKEN: { required: true }
+jobs:
+  regress:
+    runs-on: ubuntu-latest
+    container: ghcr.io/kestrel-freight/adlc-devcontainer:0.1.0
+    env:
+      COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+      GRAPHIFY_BACKEND: none
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - run: adlc regress --arm ${{ inputs.arm }} --runs 3 --out monitor/trend.jsonl
+      - uses: actions/upload-artifact@v4
+        with: { name: adlc-trend-${{ github.repository_id }}, path: monitor/trend.jsonl }

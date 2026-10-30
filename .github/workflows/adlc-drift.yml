@@ -1,0 +1,16 @@
+# Reusable: nightly. Nonzero if any artifact is > threshold commits behind HEAD.
+name: adlc-drift
+on:
+  workflow_call:
+    inputs:
+      kit-ref: { type: string, default: "v0.1.0" }
+      level: { type: string, default: "repo" }      # repo | project | org
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: astral-sh/setup-uv@v5
+      - run: uv tool install --python 3.12 "git+https://github.com/kestrel-freight/adlc-kit@${{ inputs.kit-ref }}"
+      - run: adlc stale --level ${{ inputs.level }} --all

@@ -1,0 +1,15 @@
+# Reusable: the required PR check. Fails when AGENTS.md is missing/malformed, a cited
+# path no longer exists, pins drift, or a second instruction source appears.
+name: adlc-contract-lint
+on:
+  workflow_call:
+    inputs:
+      kit-ref: { type: string, default: "v0.1.0" }
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv tool install --python 3.12 "git+https://github.com/kestrel-freight/adlc-kit@${{ inputs.kit-ref }}"
+      - run: adlc lint

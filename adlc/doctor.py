@@ -50,9 +50,9 @@ def ls_checks(repo: Path) -> list[Check]:
         return out
     import yaml
     langs = (yaml.safe_load(py.read_text()) or {}).get("language_servers", [])
-    probes = {"python": (["basedpyright", "pyright", "pyright-langserver"], "pyright"),
+    probes = {"python": (["pyright", "pyright-langserver", "basedpyright"], "pyright"),
               "typescript": (["typescript-language-server"], "typescript"),
-              "java": (["jdtls"], "eclipse"), "csharp": (["csharp-ls", "OmniSharp"], "csharp")}
+              "java": (["jdtls"], "jdtls"), "csharp": (["Microsoft.CodeAnalysis.LanguageServer", "csharp-ls"], "csharp")}
     for lang in langs:
         bins, cache_key = probes.get(lang, ([], lang))
         on_path = next((b for b in bins if shutil.which(b)), None)

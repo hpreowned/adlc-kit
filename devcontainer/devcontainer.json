@@ -1,0 +1,7 @@
+{
+  "name": "adlc-kit (tooling image)",
+  "build": { "dockerfile": "Dockerfile", "args": { "KIT_REF": "v0.1.0" } },
+  "remoteEnv": { "GRAPHIFY_BACKEND": "none", "GRAPHIFY_NO_TIPS": "1" },
+  "postCreateCommand": "adlc doctor || true",
+  "customizations": { "vscode": { "extensions": ["GitHub.copilot"] } }
+}

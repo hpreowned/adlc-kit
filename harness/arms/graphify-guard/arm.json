@@ -1,0 +1,2 @@
+{"name": "graphify-guard", "copilot_flags": ["--disable-mcp-server", "serena"], "deny_tools": [], "guard": true, "federated": false,
+ "description": "graphify arm + preToolUse hook steering view/grep/glob toward the graph (non-strict)"}
