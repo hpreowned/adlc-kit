@@ -1,0 +1,10 @@
+# The 5-task smoke set `adlc regress` runs weekly and on tool bumps (ids from harness/tasks).
+# One per category family so a regression in any tool surface shows up.
+smoke:
+  - web-003      # trace (typescript)
+  - svc-002      # literal (python gateway)
+  - svc-005      # archaeology (java)
+  - ops-002      # knowledge base
+  - web-008      # edit (tests judge)
+arm: graphify    # the pilot's winning arm — set by DECISION_ADR.md, bumped by `adlc regress --arm`
+runs: 3

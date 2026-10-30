@@ -10,7 +10,7 @@ from adlc import __version__
 
 SUBCOMMANDS = [
     "init", "doctor", "baseline", "stale", "eval", "regress", "scorecard",
-    "upgrade", "federate", "query", "pins", "lint",
+    "upgrade", "federate", "query", "pins", "lint", "guard_hook",
 ]
 
 
@@ -26,7 +26,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
-    mod = importlib.import_module(f"adlc.{args.command}")
+    mod = importlib.import_module(f"adlc.{args.command.replace('-', '_')}")
     try:
         return int(mod.run(args) or 0)
     except KeyboardInterrupt:
