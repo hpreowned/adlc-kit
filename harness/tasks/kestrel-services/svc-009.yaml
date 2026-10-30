@@ -21,6 +21,8 @@ rubric: |
   Money.Round and the test expectations changed to AwayFromZero; 1 = exits 0 but the tests
   were deleted or the rounding was inlined rather than using Money.Round; 0 = non-zero exit.
 judge: tests
-test_command: dotnet test
+test_command: dotnet test --nologo -v q
+setup_command: null
+overlay: kestrel-services/svc-009.overlay
 federated: false
 grep_bait: ["Math.Round"]

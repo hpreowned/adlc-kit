@@ -22,5 +22,7 @@ rubric: |
   0 = non-zero exit or the field is required.
 judge: tests
 test_command: .venv/bin/pytest -q
+setup_command: 'uv venv -q -p 3.12 .venv && uv pip install -q -p .venv/bin/python -e ".[dev]"'
+overlay: kestrel-services/svc-008.overlay
 federated: false
 grep_bait: ["eta_confidence"]

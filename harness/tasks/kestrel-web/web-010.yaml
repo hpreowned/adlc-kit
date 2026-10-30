@@ -21,6 +21,8 @@ rubric: |
   negative half -> away from zero both tested; 1 = exits 0 but only negative halves or only
   simple halves are handled; 0 = non-zero exit.
 judge: tests
-test_command: npm test
+test_command: npm test --silent
+setup_command: 'npm ci --silent'
+overlay: kestrel-web/web-010.overlay
 federated: false
 grep_bait: ["Math.round"]

@@ -109,16 +109,17 @@ def render_aggregate(root: Path) -> str:
             L.append(f"| {d.name} | — | no trend uploaded | | | | | | | |")
             continue
         t = rows[-1]
-        base = t.get("pilot_median_input_tokens_p50") or rows[0].get("input_tokens_p50")
-        drift = ((t["input_tokens_p50"] - base) / base) if (base and t.get("input_tokens_p50") is not None) else None
-        flag = " ⚠" if drift is not None and abs(drift) > 0.15 else ""
-        L.append(f"| {d.name} | {t.get('arm')} | {t.get('at', '')[:10]} | {t.get('runs')} | {_fmt(t.get('input_tokens_p50'))} | {_fmt(t.get('model_calls_p50'))} | "
+        tok = t.get("prompt_tokens_p50", t.get("input_tokens_p50"))
+        base = t.get("pilot_median_prompt_tokens_p50") or t.get("pilot_median_input_tokens_p50") or rows[0].get("prompt_tokens_p50")
+        drift = ((tok - base) / base) if (base and tok is not None) else None
+        flag = (" ⚠" if drift is not None and abs(drift) > 0.15 else "") + (" (dry-run)" if t.get("dry_run") else "")
+        L.append(f"| {d.name} | {t.get('arm')} | {t.get('at', '')[:10]} | {t.get('runs')} | {_fmt(tok)} | {_fmt(t.get('model_calls_p50'))} | "
                  f"{_fmt(t.get('wall_ms_p50'), 'ms')} | {_fmt(t.get('correctness'), 'pct')} | {('%+.0f%%' % (100 * drift)) if drift is not None else '—'}{flag} | graphify {t.get('graphify')} · serena {t.get('serena')} |")
     L += ["", "Sparklines (tokens p50 over time):", ""]
     for d in sorted(p for p in root.iterdir() if p.is_dir()):
         rows = trend_rows(d / "trend.jsonl")
         if rows:
-            L.append(f"- {d.name}: {sparkline([r.get('input_tokens_p50') for r in rows])}")
+            L.append(f"- {d.name}: {sparkline([r.get('prompt_tokens_p50', r.get('input_tokens_p50')) for r in rows])}")
     return "\n".join(L) + "\n"
 
 

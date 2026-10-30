@@ -38,6 +38,7 @@ def add_parser(sub) -> None:
     p.add_argument("--out", default="monitor/trend.jsonl")
     p.add_argument("--smoke", default=None, help="smoke.yml (default kit monitor/smoke.yml)")
     p.add_argument("--pilot-results", default="results", help="results dir whose medians become the drift baseline")
+    p.add_argument("--repo", default=None, help="only smoke tasks of this repo (per-repo CI runs)")
     p.add_argument("--dry-run", action="store_true")
     p.set_defaults(func=run)
 
@@ -47,9 +48,15 @@ def run(args) -> int:
     from adlc.eval import run_eval
     cfg = yaml.safe_load(Path(args.smoke or monitor_dir() / "smoke.yml").read_text())
     arm, runs = args.arm or cfg["arm"], args.runs or cfg["runs"]
+    smoke_ids = cfg["smoke"]
+    if args.repo:
+        from harness.tasklint import load_tasks
+        smoke_ids = [t["id"] for t in load_tasks(harness_dir() / "tasks") if t["id"] in smoke_ids and t["repo"] == args.repo]
+        if not smoke_ids:
+            print(f"no smoke tasks for repo {args.repo}"); return 2
     tmp_results = Path(args.out).parent / ".regress-results"
     tmp_results.mkdir(parents=True, exist_ok=True)
-    ns = SimpleNamespace(tasks=None, repos=args.repos, tier=None, task=cfg["smoke"], repo=None, arms=arm, runs=runs,
+    ns = SimpleNamespace(tasks=None, repos=args.repos, tier=None, task=smoke_ids, repo=None, arms=arm, runs=runs,
                          results=str(tmp_results), out="regress.jsonl", dry_run=args.dry_run, timeout=900, model=None, judge_model=None)
     (tmp_results / "regress.jsonl").unlink(missing_ok=True)
     rc = run_eval(ns)
@@ -66,6 +73,9 @@ def run(args) -> int:
             pilot = {"prompt_tokens_p50": s["prompt_tokens"]["p50"], "input_tokens_p50": s["input_tokens"]["p50"], "model_calls_p50": s["model_calls"]["p50"],
                      "wall_ms_p50": s["wall_ms"]["p50"], "correctness": s["correctness"]}
     row = trend_row(recs, arm, pilot)
+    row["dry_run"] = bool(args.dry_run)
+    if args.repo:
+        row["repo"] = args.repo
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     with out.open("a") as fh:

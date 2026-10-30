@@ -84,6 +84,7 @@ def run_eval(args) -> int:
                                project_graph=project_graph, timeout=args.timeout, model=args.model, tasks_root=_tasks_root(args))
                 res = execute(spec, driver)
                 rec = J.judge_record(res.record, t, judge)
+                rec["dry_run"] = bool(args.dry_run)
                 (res.raw_dir / "record.json").write_text(json.dumps(rec, indent=2))
                 with out.open("a") as fh:
                     fh.write(json.dumps(rec) + "\n")

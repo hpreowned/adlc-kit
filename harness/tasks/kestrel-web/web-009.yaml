@@ -21,6 +21,8 @@ rubric: |
   cases exist; 1 = exits 0 but pin tests were loosened without covering the new field;
   0 = non-zero exit.
 judge: tests
-test_command: npm test
+test_command: npm test --silent
+setup_command: 'npm ci --silent'
+overlay: kestrel-web/web-009.overlay
 federated: false
 grep_bait: ["eta_confidence"]

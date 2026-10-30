@@ -22,5 +22,7 @@ rubric: |
   relation unmapped; 0 = non-zero exit.
 judge: tests
 test_command: mvn -q test
+setup_command: null
+overlay: kestrel-services/svc-010.overlay
 federated: false
 grep_bait: ["ManyToOne", "JoinColumn"]

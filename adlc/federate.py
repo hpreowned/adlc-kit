@@ -95,7 +95,7 @@ def cluster(G: nx.DiGraph) -> dict[str, int]:
         return {n: i for i, c in enumerate(comms) for n in c}
 
 
-def federate_project(project_dir: Path, fetch: bool = False) -> dict:
+def federate_project(project_dir: Path, fetch: bool = False, out_dir: Path | None = None) -> dict:
     project = load_project(project_dir)
     members = load_members(project, fetch)
     G = merge(members)
@@ -116,11 +116,13 @@ def federate_project(project_dir: Path, fetch: bool = False) -> dict:
         "resolvers": {r.name: {"edges": len(r.edges), "nodes": len(r.nodes), "ambiguous": len(r.ambiguous)} for r in results},
     }
     G.graph["adlc"] = meta
-    out = project_dir / "project-graph.json"
+    out_dir = out_dir or project_dir
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out = out_dir / "project-graph.json"
     prev = out.read_text() if out.exists() else None
     data = json_graph.node_link_data(G, edges="links")
     out.write_text(json.dumps(data, separators=(",", ":")))
-    (project_dir / "PROJECT_REPORT.md").write_text(project_report(G, members, results, meta, prev))
+    (out_dir / "PROJECT_REPORT.md").write_text(project_report(G, members, results, meta, prev))
     return meta
 
 

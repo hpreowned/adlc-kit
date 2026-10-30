@@ -70,11 +70,11 @@ def test_bfs_free_contract_hops_and_ranking():
 
 
 @kestrel
-def test_kestrel_project_graph_has_contract_chain():
-    meta = federate.federate_project(PROJECT)
+def test_kestrel_project_graph_has_contract_chain(tmp_path):
+    meta = federate.federate_project(PROJECT, out_dir=tmp_path)  # never mutate the pilot's committed graph
     assert set(meta["members"]) == {"kestrel-services", "kestrel-web", "kestrel-ops"}
     assert meta["resolvers"]["http-contract"]["ambiguous"] == 0
-    G = Q.load(PROJECT / "project-graph.json")
+    G = Q.load(tmp_path / "project-graph.json")
     seeds = Q.seeds_for(G, "what consumes /v2/shipments")
     nodes, _ = Q.bfs(G, seeds, 2)
     ordered = Q.order_nodes(G, nodes, seeds, False)
