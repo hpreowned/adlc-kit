@@ -40,3 +40,16 @@ def test_regress_trend_row_flags_pilot_median():
     row = trend_row(recs, "graphify", {"input_tokens_p50": 800, "correctness": 1.0})
     assert row["runs"] == 3 and row["input_tokens_p50"] == 1000 and row["pilot_median_input_tokens_p50"] == 800
     assert row["graphify"] == "0.9.97" and len(row["serena"]) == 12
+
+
+def test_aggregate_renders_three_repos(tmp_path):
+    from adlc.scorecard import render_aggregate
+    for i, repo in enumerate(("kestrel-services", "kestrel-web", "kestrel-ops")):
+        d = tmp_path / repo
+        d.mkdir()
+        rows = [{"at": "2026-10-30T00:00:00+00:00", "arm": "graphify", "runs": 15, "input_tokens_p50": 1000 + 100 * i, "model_calls_p50": 4,
+                 "wall_ms_p50": 30000, "correctness": 0.9, "pilot_median_input_tokens_p50": 1000, "graphify": "0.9.97", "serena": "ede329aaf0c8"}]
+        rows.append({**rows[0], "input_tokens_p50": 1300 if repo == "kestrel-ops" else 1000})
+        (d / "trend.jsonl").write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    md = render_aggregate(tmp_path)
+    assert md.count("| kestrel-") == 3 and "⚠" in md and "▁" in md or "█" in md

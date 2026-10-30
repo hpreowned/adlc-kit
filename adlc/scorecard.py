@@ -97,10 +97,41 @@ def add_parser(sub) -> None:
     p.add_argument("--trend", action="store_true", help="include monitor/trend.jsonl sparklines")
     p.add_argument("--trend-file", default="monitor/trend.jsonl")
     p.add_argument("--spotcheck", default=None, help="filled spot-check sheet to compute agreement")
+    p.add_argument("--aggregate", default=None, metavar="DIR", help="org mode: DIR/<repo>/trend.jsonl → one cross-repo table")
     p.set_defaults(func=run)
 
 
+def render_aggregate(root: Path) -> str:
+    L = ["# ADLC org scorecard (cross-repo trends)", "", "| repo | arm | last run | runs | tokens p50 | calls p50 | wall p50 | correctness | drift vs pilot | pins |", "|---|---|---|---|---|---|---|---|---|---|"]
+    for d in sorted(p for p in root.iterdir() if p.is_dir()):
+        rows = trend_rows(d / "trend.jsonl")
+        if not rows:
+            L.append(f"| {d.name} | — | no trend uploaded | | | | | | | |")
+            continue
+        t = rows[-1]
+        base = t.get("pilot_median_input_tokens_p50") or rows[0].get("input_tokens_p50")
+        drift = ((t["input_tokens_p50"] - base) / base) if (base and t.get("input_tokens_p50") is not None) else None
+        flag = " ⚠" if drift is not None and abs(drift) > 0.15 else ""
+        L.append(f"| {d.name} | {t.get('arm')} | {t.get('at', '')[:10]} | {t.get('runs')} | {_fmt(t.get('input_tokens_p50'))} | {_fmt(t.get('model_calls_p50'))} | "
+                 f"{_fmt(t.get('wall_ms_p50'), 'ms')} | {_fmt(t.get('correctness'), 'pct')} | {('%+.0f%%' % (100 * drift)) if drift is not None else '—'}{flag} | graphify {t.get('graphify')} · serena {t.get('serena')} |")
+    L += ["", "Sparklines (tokens p50 over time):", ""]
+    for d in sorted(p for p in root.iterdir() if p.is_dir()):
+        rows = trend_rows(d / "trend.jsonl")
+        if rows:
+            L.append(f"- {d.name}: {sparkline([r.get('input_tokens_p50') for r in rows])}")
+    return "\n".join(L) + "\n"
+
+
 def run(args) -> int:
+    if args.aggregate:
+        md = render_aggregate(Path(args.aggregate))
+        if args.out:
+            Path(args.out).write_text(md); print(f"wrote {args.out}")
+        else:
+            print(md)
+        if args.html:
+            Path(args.html).write_text(md_to_html(md))
+        return 0
     results = Path(args.results)
     recs = load_records(results)
     spot = agreement(Path(args.spotcheck).read_text(), recs) if args.spotcheck and Path(args.spotcheck).exists() else None
