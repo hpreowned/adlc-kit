@@ -1,0 +1,12 @@
+# Kit-owned (adlc init). Trims Serena to the {{n_tools}} tools in the contract allowlist.
+# Copilot CLI ignores the .mcp.json `tools` filter today, so this file is the enforcement.
+description: ADLC context for GitHub Copilot CLI — symbol tools only; files/shell/memory writes are Copilot's job
+prompt: |
+  You are running inside GitHub Copilot CLI. File reads, greps, edits and shell commands are
+  handled by Copilot's own tools. Use Serena only for symbol-precise work: finding symbols
+  and their references/implementations, symbol-scoped edits, diagnostics, and reading the
+  committed project memories. Avoid reading whole files when a symbol query will do.
+excluded_tools:
+{{excluded_tools_yaml}}
+tool_description_overrides: {}
+single_project: true

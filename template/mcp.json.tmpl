@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "serena": {
+      "type": "local",
+      "command": "uvx",
+      "args": [
+        "--from", "git+{{serena_repo}}@{{serena_commit}}",
+        "serena", "start-mcp-server",
+        "--context", ".serena/adlc-context.yml",
+        "--agent-interface", "tools",
+        "--project-from-cwd",
+        "--enable-web-dashboard", "false",
+        "--enable-gui-log-window", "false"
+      ],
+      "tools": {{serena_tools_json}}
+    }
+  }
+}

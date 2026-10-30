@@ -1,0 +1,30 @@
+[project]
+name = "adlc"
+version = "0.1.0"
+description = "ADLC kit: the one CLI that makes a repo agent-ready (contract, context layer, guardrails, monitoring)."
+readme = "ADOPT.md"
+requires-python = ">=3.12,<3.13"
+license = "Apache-2.0"
+dependencies = [
+  "graphifyy[leiden]==0.9.97",
+  "networkx>=3.4,<4",
+  "pyyaml>=6.0.2,<7",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.3,<9", "pytest-cov>=6,<7"]
+
+[project.scripts]
+adlc = "adlc.cli:main"
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["adlc"]
+# Everything `adlc init` drops into a repo, plus the harness, ships inside the wheel.
+force-include = { "template" = "adlc/_data/template", "harness" = "adlc/_data/harness", "monitor" = "adlc/_data/monitor", "policy" = "adlc/_data/policy", "workflows" = "adlc/_data/workflows" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "harness/tests", "monitor/tests"]

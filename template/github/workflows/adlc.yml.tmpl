@@ -1,0 +1,28 @@
+# Kit-owned. Policy is enforced here, not in markdown.
+name: adlc
+on:
+  pull_request:
+  push: { branches: [main] }
+  schedule:
+    - cron: "17 2 * * *"   # drift, nightly
+    - cron: "23 3 * * 1"   # regress, weekly
+  workflow_dispatch:
+jobs:
+  contract-lint:
+    if: github.event_name == 'pull_request'
+    uses: {{kit_repo}}/.github/workflows/adlc-contract-lint.yml@{{kit_ref}}
+  baseline:
+    if: github.event_name == 'push'
+    uses: {{kit_repo}}/.github/workflows/adlc-baseline.yml@{{kit_ref}}
+    permissions: { contents: write }
+  drift:
+    if: github.event_name == 'schedule' && github.event.schedule == '17 2 * * *'
+    uses: {{kit_repo}}/.github/workflows/adlc-drift.yml@{{kit_ref}}
+  regress:
+    if: github.event_name == 'schedule' && github.event.schedule == '23 3 * * 1'
+    uses: {{kit_repo}}/.github/workflows/adlc-regress.yml@{{kit_ref}}
+    secrets: inherit
+  scorecard-upload:
+    needs: [regress]
+    if: always() && github.event_name == 'schedule'
+    uses: {{kit_repo}}/.github/workflows/adlc-scorecard-upload.yml@{{kit_ref}}

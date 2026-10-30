@@ -1,0 +1,58 @@
+{
+  "_comment": "Kit-owned pins for everything that is not a Python dependency (those live in uv.lock). PINS.md is generated from both. Bump via Renovate, never by hand in a consuming repo.",
+  "copilot_cli": {
+    "version": "1.0.105",
+    "install": "brew install --cask copilot-cli | npm i -g @github/copilot@1.0.105"
+  },
+  "graphify": {
+    "package": "graphifyy[leiden]",
+    "version": "0.9.97",
+    "wheel_sha256": "eb24dd7f93293753c001ca36e7304e0b52e86fe4124c2f531dcdb3d64865e01a"
+  },
+  "serena": {
+    "repo": "https://github.com/oraios/serena",
+    "commit": "ede329aaf0c824bea75455a2926f01420d7aa620",
+    "license": "GPL-3.0-or-later (app) / MIT (SolidLSP) \u2014 see DECISION_ADR.md",
+    "context": "copilot-cli",
+    "tools": [
+      "find_symbol",
+      "find_referencing_symbols",
+      "get_symbols_overview",
+      "find_implementations",
+      "get_diagnostics_for_file",
+      "replace_symbol_body",
+      "insert_after_symbol",
+      "insert_before_symbol",
+      "read_memory",
+      "list_memories"
+    ]
+  },
+  "language_servers": {
+    "python": {
+      "name": "basedpyright",
+      "version": "1.29.5",
+      "install": "uv tool install basedpyright==1.29.5"
+    },
+    "typescript": {
+      "name": "typescript-language-server",
+      "version": "4.3.4",
+      "install": "npm i -g typescript-language-server@4.3.4 typescript@5.7.3"
+    },
+    "java": {
+      "name": "jdtls",
+      "version": "1.43.0",
+      "install": "download eclipse.jdt.ls 1.43.0 tarball (see devcontainer/Dockerfile)"
+    },
+    "csharp": {
+      "name": "csharp-ls",
+      "version": "0.18.0",
+      "install": "dotnet tool install --global csharp-ls --version 0.18.0"
+    }
+  },
+  "python": "3.12",
+  "kit": {
+    "repo": "kestrel-freight/adlc-kit",
+    "ref": "v0.1.0",
+    "devcontainer_image": "ghcr.io/kestrel-freight/adlc-devcontainer:0.1.0"
+  }
+}
