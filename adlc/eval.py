@@ -144,5 +144,6 @@ def run(args) -> int:
         return judge_only(args)
     if args.adoption_test:
         from adlc.adoption import run_adoption
-        return run_adoption(Path(args.adoption_test).resolve(), Path(args.results).resolve())
+        return run_adoption(Path(args.adoption_test).resolve(), Path(args.results).resolve(),
+                            task_id=(args.task or [None])[0], tasks_root=Path(args.tasks).resolve() if args.tasks else None)
     return run_eval(args)

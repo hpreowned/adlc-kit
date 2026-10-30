@@ -16,7 +16,7 @@ def _run(cmd: list[str], cwd: Path, env: dict | None = None) -> tuple[int, str, 
     return r.returncode, (r.stdout + r.stderr)[-4000:], time.time() - t0
 
 
-def run_adoption(repo: Path, results: Path, kit_url: str | None = None, task_id: str | None = None) -> int:
+def run_adoption(repo: Path, results: Path, kit_url: str | None = None, task_id: str | None = None, tasks_root: Path | None = None) -> int:
     results.mkdir(parents=True, exist_ok=True)
     adlc = os.environ.get("ADLC_BIN", str(Path(sys.executable).parent / "adlc"))
     env = {**os.environ, "GRAPHIFY_BACKEND": "none", "GRAPHIFY_NO_TIPS": "1", "PATH": str(Path(sys.executable).parent) + os.pathsep + os.environ.get("PATH", "")}
@@ -54,8 +54,11 @@ def run_adoption(repo: Path, results: Path, kit_url: str | None = None, task_id:
             deviations.append(f"{name}: exit {rc}")
     if task_id:
         t = time.time()
-        rc, out, _ = _run([adlc, "eval", "--task", task_id, "--runs", "1", "--arms", "baseline,graphify", "--repos", str(repo.parent),
-                           "--results", str(results / "adoption-runs"), "--out", "adoption.jsonl"], repo.parent, env)
+        cmd = [adlc, "eval", "--task", task_id, "--runs", "1", "--arms", "baseline,graphify", "--repos", str(repo.parent),
+               "--results", str(results / "adoption-runs"), "--out", "adoption.jsonl"]
+        if tasks_root:
+            cmd += ["--tasks", str(tasks_root)]
+        rc, out, _ = _run(cmd, repo.parent, env)
         log.append(f"## 5 one golden task in two arms — {'OK' if rc == 0 else 'EXIT ' + str(rc)} — {time.time() - t:.1f}s\n\n```\n{out.strip()[-2000:]}\n```\n")
         if rc != 0:
             deviations.append(f"golden task run: exit {rc}")

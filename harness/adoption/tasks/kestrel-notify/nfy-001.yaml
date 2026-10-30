@@ -1,0 +1,22 @@
+id: nfy-001
+repo: kestrel-notify
+cwd: .
+category: archaeology
+languages: [python]
+tier: 1
+prompt: |
+  The notification queue retries a failed delivery a fixed number of times before dead-lettering.
+  How many times, and why that number? Point me at the rationale.
+expected: |
+  MAX_RETRIES = 3 in notify/queue.py (1 initial attempt + 3 retries, jittered exponential backoff,
+  base 0.5 s doubled per retry, jitter 0.5–1.5, capped at 30 s). The only rationale is a comment
+  "see OPS-61", and no OPS-61 document exists in the repo — the agent should say the rationale is
+  not recoverable from this repo and name the ticket id to look up elsewhere.
+rubric: |
+  2 = says 3 retries, names OPS-61, and states the rationale is not in the repo;
+  1 = says 3 retries but invents or omits the rationale question;
+  0 = wrong count.
+judge: rubric
+test_command: null
+federated: false
+grep_bait: ["MAX_RETRIES"]
