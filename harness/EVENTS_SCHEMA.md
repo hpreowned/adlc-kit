@@ -19,6 +19,15 @@ pilot machine plus the harness smoke runs. Re-verify on every Copilot CLI bump
 | `skill.invoked` | `data.name`, `data.source` (`project`/`personal`) | skill usage (e.g. `/graphify`) |
 | `session.shutdown` | `data.totalPremiumRequests`, `data.tokenDetails.{input,cache_read,cache_write,output}.tokenCount`, `data.modelMetrics.<model>.usage.*`, `data.totalApiDurationMs`, `data.codeChanges.{linesAdded,linesRemoved,filesModified}` | PRIMARY totals |
 
+## Premium requests vs model calls (measured, 2026-10-30)
+A single `-p` prompt that ran the `/graphify` docs pass on kestrel-ops produced **35**
+`session.usage_record` events (35 model API calls, `cost` 1.0 each, 2.96M input tokens
+mostly cache reads) while `session.shutdown.totalPremiumRequests` and the stdout `result`
+both said **1**. Both are "right": Copilot bills premium requests per *user prompt* ×
+model multiplier, not per API call. The scorecard therefore reports three columns and
+never conflates them: `premium_requests` (billing), `model_calls`, and `premium_cost_sum`
+(= Σ cost, the AI-credits proxy). `totalNanoAiu` is recorded as-is (undocumented unit).
+
 ## Cross-checks
 - stdout (`--output-format json`) ends with `{"type":"result","sessionId","exitCode",
   "usage":{premiumRequests,totalApiDurationMs,sessionDurationMs,codeChanges}}`. The

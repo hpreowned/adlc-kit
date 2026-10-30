@@ -47,11 +47,30 @@ def stamp(repo: Path, artifact: str, extra: dict | None = None) -> dict:
     return info
 
 
-def build(repo: Path, incremental: bool = False, viz: bool = True) -> dict:
+def has_semantic_nodes(graph_path: Path) -> bool:
+    if not graph_path.exists():
+        return False
+    try:
+        nodes = json.loads(graph_path.read_text()).get("nodes", [])
+    except json.JSONDecodeError:
+        return False
+    return any(n.get("file_type") in ("concept", "rationale") for n in nodes)
+
+
+def build(repo: Path, incremental: bool = False, viz: bool = True, stamp_only: bool = False, force: bool = False) -> dict:
+    from adlc.render import is_docs_only
     c = C.load(repo)
     t0 = time.time()
-    out_dir = (repo / c.artifact).parent
-    if incremental and (repo / c.artifact).exists():
+    gp = repo / c.artifact
+    if not stamp_only and not force and gp.exists() and is_docs_only(repo) and has_semantic_nodes(gp):
+        stamp_only = True
+        print("note: docs-only repo with a skill-built semantic graph — stamping only. "
+              "Refresh the docs pass with `/graphify .` inside a Copilot session (never headless).")
+    if stamp_only:
+        if not gp.exists():
+            raise SystemExit(f"{c.artifact} does not exist; nothing to stamp")
+        return stamp(repo, c.artifact, {"mode": "stamp-only", "build_seconds": 0.0})
+    if incremental and gp.exists():
         log = _run(["graphify", "update", str(repo)], repo)
         mode = "incremental"
     else:
@@ -70,11 +89,13 @@ def add_parser(sub) -> None:
     p.add_argument("--repo", default=".")
     p.add_argument("--incremental", action="store_true", help="graphify update instead of full extract")
     p.add_argument("--no-viz", action="store_true")
+    p.add_argument("--stamp-only", action="store_true", help="re-stamp the existing graph without rebuilding")
+    p.add_argument("--force", action="store_true", help="rebuild even a skill-built docs graph")
     p.set_defaults(func=run)
 
 
 def run(args) -> int:
     repo = Path(args.repo).resolve()
-    info = build(repo, incremental=args.incremental, viz=not args.no_viz)
+    info = build(repo, incremental=args.incremental, viz=not args.no_viz, stamp_only=args.stamp_only, force=args.force)
     print(f"baseline {info['mode']}: {info['nodes']} nodes, {info['edges']} edges, {info['build_seconds']}s, stamped {info['commit_sha'][:10]}{' (dirty)' if info['dirty'] else ''}")
     return 0

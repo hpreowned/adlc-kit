@@ -18,7 +18,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       openjdk-21-jdk-headless maven ca-certificates curl git jq unzip \
     && rm -rf /var/lib/apt/lists/*
 RUN curl -fsSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 8.0 --install-dir /usr/share/dotnet \
+    && curl -fsSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 10.0 --runtime dotnet --install-dir /usr/share/dotnet \
     && ln -s /usr/share/dotnet/dotnet /usr/local/bin/dotnet
+# (.NET 8 SDK builds the pricing service; the .NET 10 *runtime* is required by Serena's Roslyn language server 5.5.x)
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && apt-get install -y nodejs && rm -rf /var/lib/apt/lists/*
 RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR=/usr/local/bin sh && uv python install 3.12
 

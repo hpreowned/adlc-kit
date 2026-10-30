@@ -1,19 +1,28 @@
 # Per-tool install cost (operating-cost line for the ADR)
 
-Measured on the pilot dev machine (Apple Silicon, 2026-10-30), wall-clock, warm network.
-Docker was not available on the pilot machine, so the image build itself was NOT timed;
-the per-step numbers below are from installing the same pins directly.
+Honest accounting. Docker was NOT available on the pilot machine, so the devcontainer
+image was never built here; the Dockerfile is reviewed, not executed. What was measured
+is the same install steps run directly on the dev machine (Apple Silicon, warm network).
 
-| Step | Minutes | Notes |
+| Step | Measured | Notes |
 |---|---|---|
-| openjdk@21 + maven (brew) | 2.1 | |
-| .NET 8 SDK (dotnet-install.sh) | 1.4 | cask needed sudo; script does not |
-| uv + Python 3.12 | 0.2 | |
-| graphifyy[leiden]==0.9.97 into a venv | 0.6 | 15 tree-sitter wheels |
-| Serena @ commit via uvx (first run) | 1.9 | builds from git; cached after |
-| Serena python LS (pyright, downloaded by Serena on first use) | 0.5 | into ~/.serena cache |
-| basedpyright 1.29.5 | 0.2 | |
-| typescript-language-server 4.3.4 | 0.3 | |
-| jdtls 1.43.0 tarball | 0.8 | ~110 MB |
-| csharp-ls 0.18.0 | 0.9 | dotnet tool |
-| **Total** | **~9 min** | image size estimate ≈ 3.5 GB (JDK + .NET + Node) |
+| openjdk@21 + maven + act (Homebrew) | not timed | ran as one background job with the failed dotnet cask; several minutes |
+| .NET 8 SDK via dotnet-install.sh | not timed | background job; well under 2 min |
+| Python 3.12 via `uv python install` | 6 s | |
+| `graphifyy[leiden]==0.9.97` into a fresh venv, cold cache | 6 s | 15 tree-sitter wheels, all prebuilt for arm64 |
+| Serena @ commit via `uvx` (first run, builds from git) | not timed precisely | background job; ~2 min order of magnitude |
+| `serena download-ls-dependencies python typescript java csharp` | 12 s | jdtls 322 MB + typescript-language-server 25 MB downloaded; pyright is fetched lazily on first use; **csharp failed: needs .NET 10 runtime** (fixed in Dockerfile) |
+| `copilot` CLI | pre-installed | Homebrew cask 1.0.60 self-updated to 1.0.105 |
+
+Per-language language-server cost (what a platform team actually pays per repo language):
+
+| Language | Server (pinned by Serena commit) | Install | First activation |
+|---|---|---|---|
+| Python | pyright 1.1.403 | lazy, ~20 MB npm | ~5 s on kestrel gateway |
+| TypeScript | typescript-language-server 5.1.3 | 25 MB | not yet measured |
+| Java | eclipse-jdtls (VSIX) | 322 MB | not yet measured (jdtls indexes Maven deps on first start; expect minutes) |
+| C# | roslyn-language-server 5.5.0 | needs .NET 10 runtime (~70 MB) | not yet measured |
+
+Image size estimate ≈ 3–4 GB (JDK + two .NET versions + Node + jdtls). Not measured.
+Rows marked "not yet measured" are filled in by `adlc eval --tier 2` which records
+Serena start-up latency per language from the MCP connect timestamps.

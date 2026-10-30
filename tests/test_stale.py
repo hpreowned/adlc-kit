@@ -52,3 +52,13 @@ def test_stamp_fallback_inside_graph_json(repo):
     (out / "graph.json").write_text(json.dumps({"graph": {"adlc": {"commit_sha": head_sha(repo)}}, "nodes": [], "links": []}))
     s = stale.check(repo, "graphify-out/graph.json")
     assert s.exit_code == 0
+
+
+def test_artifact_commit_does_not_count_as_drift(repo):
+    _stamp(repo, head_sha(repo))
+    from tests.conftest import git
+    git(repo, "add", "-A"); git(repo, "commit", "-q", "-m", "adlc: baseline")
+    s = stale.check(repo, "graphify-out/graph.json")
+    assert s.exit_code == 0 and s.behind == 0
+    commit(repo, "real_change.txt")
+    assert stale.check(repo, "graphify-out/graph.json").behind == 1

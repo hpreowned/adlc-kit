@@ -26,6 +26,7 @@ def test_usage_record_cross_check():
     m = parse_file(FIX)
     assert m.model_calls == 2
     assert m.premium_cost_sum == 2.0  # two calls at multiplier 1.0 each
+    assert m.nano_aiu is not None
 
 
 def test_unknown_types_are_counted_not_fatal():

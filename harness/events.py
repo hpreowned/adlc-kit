@@ -23,9 +23,10 @@ class RunMetrics:
     cache_read_tokens: int = 0
     cache_write_tokens: int = 0
     reasoning_tokens: int = 0
-    premium_requests: float | None = None      # shutdown.totalPremiumRequests
-    premium_cost_sum: float | None = None      # sum(usage_record.cost) cross-check
-    model_calls: int = 0                        # count of session.usage_record
+    premium_requests: float | None = None      # shutdown.totalPremiumRequests (billing: per prompt × multiplier)
+    premium_cost_sum: float | None = None      # sum(usage_record.cost): model calls × multiplier ("AI credits" proxy)
+    model_calls: int = 0                        # count of session.usage_record (one per model API call)
+    nano_aiu: int | None = None                 # shutdown/usage_checkpoint totalNanoAiu (AI units, undocumented)
     api_duration_ms: int = 0
     wall_ms: int = 0
     turns: int = 0
@@ -113,6 +114,7 @@ def parse_events(lines) -> RunMetrics:
             for mm in (d.get("modelMetrics") or {}).values():
                 m.reasoning_tokens += int((mm.get("usage") or {}).get("reasoningTokens", 0))
             m.premium_requests = d.get("totalPremiumRequests")
+            m.nano_aiu = d.get("totalNanoAiu")
             m.api_duration_ms = int(d.get("totalApiDurationMs") or 0)
             cc = d.get("codeChanges") or {}
             m.files_modified = list(cc.get("filesModified") or [])
