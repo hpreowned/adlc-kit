@@ -1,0 +1,24 @@
+id: web-002
+repo: kestrel-web
+cwd: .
+category: locate
+languages: [typescript]
+tier: 1
+prompt: |
+  Where in the web app is a user stopped from firing the reserve request twice by
+  clicking the Reserve button repeatedly while the first call is still in flight?
+expected: |
+  src/pages/ShipmentDetail.tsx renders the Reserve button with disabled={reserving}, where
+  reserving = reserveStatus === 'loading'. That status comes from useReserveShipment
+  (src/hooks/useReserveShipment.ts), which wraps useMutation (src/hooks/useMutation.ts);
+  useMutation.run sets status 'loading' before awaiting the API call and the label becomes
+  "Reserving…". There is no debounce or lock in the API client itself.
+rubric: |
+  2 = ShipmentDetail button disabled while status is loading AND the useMutation/
+      useReserveShipment state it derives from;
+  1 = only the disabled button, without where the loading status originates;
+  0 = points at the API client, router, or says nothing prevents it.
+judge: rubric
+test_command: null
+federated: false
+grep_bait: ["double click", "disabled"]

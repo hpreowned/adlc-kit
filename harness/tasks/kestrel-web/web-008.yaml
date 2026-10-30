@@ -1,0 +1,28 @@
+id: web-008
+repo: kestrel-web
+cwd: .
+category: cross-repo
+languages: [typescript, python, java]
+tier: 3
+prompt: |
+  Will a shipment created from the web booking form actually be accepted by the real
+  booking service? Check the fields the form sends against what the layers behind it
+  require, and say what the user would see if it is rejected.
+expected: |
+  Not as the web app stands. createShipmentToWire (src/api/mappers.ts) sends only reference,
+  origin, destination and carrier_code; there is no weight in CreateShipmentWire
+  (src/api/wire.ts). The gateway's ShipmentIn (gateway/gateway/models.py) makes weight_kg
+  optional and BookingClient.create_shipment drops None fields, but booking's
+  CreateShipmentRequest.weightKg is @NotNull (min 0.1). Booking answers 400 "request
+  validation failed" listing weight_kg; the gateway maps 400 to 422 upstream_rejected with
+  that detail; the web ApiError surfaces in BookingForm as "We couldn't create that booking"
+  plus the detail text.
+rubric: |
+  2 = identifies the missing weight_kg across web/gateway/booking AND the 400->422 error path
+      shown in BookingForm;
+  1 = spots the missing weight but not the downstream error translation or user-visible text;
+  0 = says the request is valid, or only checks the web side.
+judge: rubric
+test_command: null
+federated: true
+grep_bait: ["weight_kg", "weightKg"]

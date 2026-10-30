@@ -1,0 +1,28 @@
+id: ops-002
+repo: kestrel-ops
+cwd: .
+category: archaeology
+languages: [docs]
+tier: 3
+prompt: |
+  Finance noticed a surcharge pricing at 10.12 on an invoice line but 10.13 on the carrier
+  statement. Why do pricing's fuel surcharge and the web app's money helper round
+  differently from the rest of the system, what is the intended rule, and what is the status?
+expected: |
+  adr/0005-money-as-decimal-minor-units.md sets the rule: decimal money, all rounding half
+  away from zero (MidpointRounding.AwayFromZero) through Money.Round. Two recorded deviations
+  (amended 2026-09-30) are tracked in tickets/PRC-233.md: QuoteCalculator.ApplyFuelSurcharge
+  uses Math.Round(value, 2), which is banker's (ToEven), so exact halves like 10.125 give
+  10.12; and web src/lib/money.ts roundMoney uses Math.round on binary floats. Reported by
+  Finance operations; owner pricing-team; status open in tickets/export.csv. The web team
+  will fix its side after the pricing change lands.
+rubric: |
+  2 = ADR-0005 target rule + both deviations (fuel surcharge Math.Round and web roundMoney)
+      + PRC-233 open status;
+  1 = explains the banker's-vs-away-from-zero cause for one deviation, or lacks the
+      ticket/status;
+  0 = no source, or blames data/currency conversion.
+judge: rubric
+test_command: null
+federated: false
+grep_bait: ["banker", "AwayFromZero"]

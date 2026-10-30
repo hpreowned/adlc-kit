@@ -6,7 +6,7 @@ from harness.scorecard import agreement, summarise, sparkline
 
 def _rec(task, arm, run, tokens, score, model="m1", behind=0):
     return {"run_id": f"{task}__{arm}__r{run}", "task": task, "arm": arm, "run": run, "category": "trace", "languages": ["python"],
-            "input_tokens": tokens, "output_tokens": 100, "model_calls": 3, "premium_requests": 1, "wall_ms": 5000, "api_duration_ms": 4000,
+            "prompt_tokens": tokens, "input_tokens": tokens, "output_tokens": 100, "model_calls": 3, "premium_requests": 1, "wall_ms": 5000, "api_duration_ms": 4000,
             "turns": 2, "bytes_read": 1000, "judge_score": score, "models": [model], "copilot_version": "1.0.105", "freshness_behind": behind}
 
 

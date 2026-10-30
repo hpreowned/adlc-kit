@@ -7,7 +7,7 @@ import statistics as st
 from collections import defaultdict
 from pathlib import Path
 
-METRICS = ("input_tokens", "output_tokens", "cache_read_tokens", "model_calls", "premium_requests", "wall_ms", "api_duration_ms", "turns", "bytes_read")
+METRICS = ("prompt_tokens", "input_tokens", "output_tokens", "cache_read_tokens", "model_calls", "premium_requests", "wall_ms", "api_duration_ms", "turns", "bytes_read")
 
 
 def load_records(results: Path) -> list[dict]:
@@ -58,9 +58,9 @@ def per_task_table(recs: list[dict]) -> list[dict]:
     rows = []
     for (task, arm), rs in sorted(group(recs, ("task", "arm")).items()):
         s = summarise(rs)
-        rows.append({"task": task, "arm": arm, "n": s["n"], "tokens_p50": (s["input_tokens"]["p50"] or 0) + (s["output_tokens"]["p50"] or 0),
+        rows.append({"task": task, "arm": arm, "n": s["n"], "tokens_p50": s["prompt_tokens"]["p50"],
                      "calls_p50": s["model_calls"]["p50"], "wall_p50": s["wall_ms"]["p50"], "correctness": s["correctness"],
-                     "tokens_cv": s["input_tokens"]["cv"]})
+                     "tokens_cv": s["prompt_tokens"]["cv"]})
     return rows
 
 

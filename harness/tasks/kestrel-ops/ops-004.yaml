@@ -1,0 +1,27 @@
+id: ops-004
+repo: kestrel-ops
+cwd: .
+category: archaeology
+languages: [docs]
+tier: 3
+prompt: |
+  Our static analyzer flags LegacyTariffLoader in pricing as having zero references, and
+  the name says it was replaced. Can we delete it? Has this come up before?
+expected: |
+  No. tickets/PRC-240.md (closed 2026-10-05, won't do): the class has no static reference but
+  is selected by name from the top-level "TariffLoader" key in pricing's appsettings.json and
+  resolved with Type.GetType by TariffLoaderFactory. Production and staging run on it
+  (adr/0003-dotnet-for-pricing.md, amended); CsvTariffLoader is the factory default for
+  onboarding and local use. Deleting it would crash pricing at start-up on every pod and fail
+  LegacyTariffLoaderConfigTests. Follow-ups: policies/change-management.md section 4 now
+  says no references is not proof of dead code, so search configuration first, and
+  runbooks/pricing-tariff-reload.md warns not to delete or rename it.
+rubric: |
+  2 = "do not delete", loaded by name from appsettings.json via TariffLoaderFactory, cites
+      PRC-240, and notes production uses it;
+  1 = says not to delete and mentions config loading without the ticket or production use;
+  0 = says it is dead and safe to remove.
+judge: rubric
+test_command: null
+federated: false
+grep_bait: ["LegacyTariffLoader", "zero references"]

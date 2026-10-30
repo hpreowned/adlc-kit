@@ -1,0 +1,25 @@
+id: web-003
+repo: kestrel-web
+cwd: .
+category: trace
+languages: [typescript]
+tier: 1
+prompt: |
+  The money rounding helper in the web app has a known bug. Which parts of the UI
+  actually show values that pass through it, directly or indirectly?
+expected: |
+  roundMoney in src/lib/money.ts is called by formatMoney, sumMoney and parseMoneyInput in the
+  same file. Only formatMoney has a production caller: the MoneyText component
+  (src/components/MoneyText.tsx). MoneyText is rendered by QuoteBreakdown
+  (src/components/QuoteBreakdown.tsx, each breakdown line and the total) and directly by
+  QuotePage (src/pages/QuotePage.tsx, per-carrier quote total). sumMoney and parseMoneyInput
+  are not used outside tests. So every price shown on the quote page is rounded by it.
+rubric: |
+  2 = formatMoney -> MoneyText -> QuoteBreakdown and QuotePage, noting sumMoney/
+      parseMoneyInput are unused in src;
+  1 = gets money.ts internals and MoneyText but misses QuoteBreakdown or QuotePage;
+  0 = only money.ts or wrong components.
+judge: rubric
+test_command: null
+federated: false
+grep_bait: ["roundMoney"]

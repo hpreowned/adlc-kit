@@ -1,0 +1,26 @@
+id: web-005
+repo: kestrel-web
+cwd: .
+category: trace
+languages: [typescript]
+tier: 1
+prompt: |
+  On the quote page, when the pricing call for one carrier fails, how does that failure get
+  from the fetch to the screen, and does one failing carrier hide the others' quotes?
+expected: |
+  QuotePage (src/pages/QuotePage.tsx) calls fetchQuote/fetchQuotes from useQuote
+  (src/hooks/useQuote.ts), which runs requestQuote in src/api/client.ts for each carrier with
+  Promise.allSettled. A rejected call (ApiError from request()) is stored as that carrier's
+  CarrierQuote.error with quote null, so other carriers' quotes still render. The failing
+  card shows an ErrorBanner with QUOTE_ERROR_COPY (src/lib/copy.ts) and detail from
+  describeError (src/api/errors.ts). Only when every carrier fails does useQuote set a
+  top-level error and status 'error'.
+rubric: |
+  2 = useQuote allSettled per-carrier error handling + QuotePage per-card ErrorBanner with
+      QUOTE_ERROR_COPY, and says other carriers still show;
+  1 = describes the error path but not the per-carrier isolation (or the reverse);
+  0 = claims one failure blanks all quotes or misses useQuote.
+judge: rubric
+test_command: null
+federated: false
+grep_bait: ["QUOTE_ERROR_COPY", "allSettled"]

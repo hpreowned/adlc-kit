@@ -1,0 +1,30 @@
+id: web-007
+repo: kestrel-web
+cwd: .
+category: cross-repo
+languages: [typescript, python, java]
+tier: 3
+prompt: |
+  The booking form generates a reference up front so that a double submit or a retry should
+  not create a second shipment. Follow that field from the form to the booking service: is
+  the retry actually idempotent end to end?
+expected: |
+  No. The web form generates the reference (generateReference in src/lib/validation.ts,
+  used in src/pages/BookingForm.tsx) and createShipmentToWire (src/api/mappers.ts) sends it
+  as "reference". The gateway ShipmentIn (kestrel-services/gateway/gateway/models.py) accepts
+  reference and BookingClient.create_shipment (gateway/gateway/clients/booking.py) forwards
+  it and even marks the call retryable when it is set. But booking's CreateShipmentRequest
+  (booking/.../web/dto/CreateShipmentRequest.java) reads client_reference, not reference;
+  Jackson ignores the unknown field, so booking derives its own reference and idempotency
+  (ADR-0006) is silently broken. A retried POST can create a duplicate shipment. No ticket
+  exists yet.
+rubric: |
+  2 = traces reference through web, gateway AND names the client_reference mismatch in
+      booking, concluding idempotency is broken;
+  1 = notices the field is passed along and ADR-0006 but misses the name mismatch (or finds
+      the mismatch without tracing the web/gateway hops);
+  0 = concludes retries are safe.
+judge: rubric
+test_command: null
+federated: true
+grep_bait: ["reference", "idempotent"]

@@ -1,0 +1,26 @@
+id: ops-009
+repo: kestrel-ops
+cwd: .
+category: cross-project
+languages: [docs]
+tier: 3
+prompt: |
+  Who owns the decision to serialise concurrent reserves in booking with a database lock,
+  and which team was on call and wrote up the incident that led to it?
+expected: |
+  The decision owner is @kestrel/booking-team (owners of BookingService; stated in
+  postmortems/2026-06-14-double-booking.md, tickets/BOOK-398.md and adr/0009-team-boundaries-
+  and-codeowners.md rule 2; kestrel-services CODEOWNERS gives /booking/ to booking-team).
+  The postmortem was authored by the platform-team on-call (primary on the day) and reviewed
+  2026-06-18; a booking-team engineer joined at 14:48. It took 39 minutes to find the right
+  team, which led to ADR-0009 and the OPS-51 on-call rewrite (tickets/OPS-51.md). No
+  individual is named.
+rubric: |
+  2 = booking-team as decision owner AND platform-team on-call as postmortem author, with a
+      supporting source (postmortem, ADR-0009 rule 2 or BOOK-398);
+  1 = only one of the two teams, or swaps the roles;
+  0 = architecture guild or pricing-team named as owner.
+judge: rubric
+test_command: null
+federated: true
+grep_bait: ["advisory lock", "decision owner"]

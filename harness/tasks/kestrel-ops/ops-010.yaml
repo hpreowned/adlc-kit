@@ -1,0 +1,28 @@
+id: ops-010
+repo: kestrel-ops
+cwd: .
+category: cross-project
+languages: [docs]
+tier: 3
+prompt: |
+  We want to add a column to the booking shipments table. Which teams must approve it, and
+  what change process and rollback rules apply?
+expected: |
+  Ownership is in kestrel-services CODEOWNERS: /booking/src/main/resources/db/ is owned by
+  both @kestrel/booking-team and @kestrel/platform-team, so both approve (adr/0009-team-
+  boundaries-and-codeowners.md rule 1: cross-team changes need both owners). Under
+  policies/change-management.md a deploy with a schema change is a Normal change: owning
+  team lead plus platform-team approval, ticket linked, tests green (mvn -q test), rollback
+  plan, and schema changes are expand-then-contract, backward compatible for one release;
+  runbooks/deploy-rollback.md adds that schema is forward-only and app rollback never rolls
+  it back. If the column surfaces in the API, consuming teams (gateway, web) are named on
+  the ticket.
+rubric: |
+  2 = booking-team AND platform-team (db/ path in CODEOWNERS) + Normal change +
+      expand/contract or forward-only rule;
+  1 = names the right teams or the process but not both;
+  0 = says only booking-team, or architecture guild approves.
+judge: rubric
+test_command: null
+federated: true
+grep_bait: ["schema", "column"]

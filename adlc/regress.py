@@ -15,7 +15,7 @@ def trend_row(recs: list[dict], arm: str, pilot: dict | None) -> dict:
     from harness.scorecard import summarise
     s = summarise(recs)
     row = {"at": datetime.now(timezone.utc).isoformat(timespec="seconds"), "arm": arm, "runs": s["n"],
-           "input_tokens_p50": s["input_tokens"]["p50"], "model_calls_p50": s["model_calls"]["p50"],
+           "prompt_tokens_p50": s["prompt_tokens"]["p50"], "input_tokens_p50": s["input_tokens"]["p50"], "model_calls_p50": s["model_calls"]["p50"],
            "wall_ms_p50": s["wall_ms"]["p50"], "correctness": s["correctness"], "edit_pass_rate": s["edit_pass_rate"],
            "models": s["models"], "copilot_versions": s["copilot_versions"],
            "graphify": _pin("graphify"), "serena": _pin("serena")[:12]}
@@ -63,12 +63,12 @@ def run(args) -> int:
         base = [r for r in load_records(pr) if r.get("arm") == arm]
         if base:
             s = summarise(base)
-            pilot = {"input_tokens_p50": s["input_tokens"]["p50"], "model_calls_p50": s["model_calls"]["p50"],
+            pilot = {"prompt_tokens_p50": s["prompt_tokens"]["p50"], "input_tokens_p50": s["input_tokens"]["p50"], "model_calls_p50": s["model_calls"]["p50"],
                      "wall_ms_p50": s["wall_ms"]["p50"], "correctness": s["correctness"]}
     row = trend_row(recs, arm, pilot)
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     with out.open("a") as fh:
         fh.write(json.dumps(row) + "\n")
-    print(f"regress: {row['runs']} runs on {arm} → {out} (tokens p50 {row['input_tokens_p50']}, correctness {row['correctness']})")
+    print(f"regress: {row['runs']} runs on {arm} → {out} (prompt tokens p50 {row['prompt_tokens_p50']}, correctness {row['correctness']})")
     return 0

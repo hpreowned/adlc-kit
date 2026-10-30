@@ -1,0 +1,22 @@
+id: web-001
+repo: kestrel-web
+cwd: .
+category: literal
+languages: [typescript]
+tier: 1
+prompt: |
+  Which environment variable turns on comparing quotes across all carriers in the web app,
+  where is it read, and what values count as "on"?
+expected: |
+  VITE_FEATURE_MULTI_CARRIER_QUOTES. src/lib/flags.ts: isMultiCarrierQuotesEnabled() reads
+  it from import.meta.env and parseFlag treats 1, true, on, yes and enabled (case-insensitive,
+  trimmed) as true; anything else or unset is false. It is consumed in src/pages/QuotePage.tsx
+  and documented with default false in .env.example.
+rubric: |
+  2 = variable name + flags.ts parsing + the accepted truthy values;
+  1 = variable name and file but not the truthy values (or the reverse);
+  0 = wrong variable or file.
+judge: rubric
+test_command: null
+federated: false
+grep_bait: ["MULTI_CARRIER"]

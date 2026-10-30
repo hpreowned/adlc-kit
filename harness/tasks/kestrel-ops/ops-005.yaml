@@ -1,0 +1,25 @@
+id: ops-005
+repo: kestrel-ops
+cwd: .
+category: locate
+languages: [docs]
+tier: 3
+prompt: |
+  I'm on call and customers are getting "booking temporarily unavailable" on bookings. Which
+  runbook covers it, and who does our policy say I should page if it persists?
+expected: |
+  runbooks/gateway-429-storm.md: the gateway's 503 is its translation of booking's 429
+  "carrier capacity exhausted" (GW-110); steps find the rejected carrier via the
+  booking.ratelimit.rejected metric and lower that carrier's override. Escalation is in
+  policies/on-call-policy.md section 5: limiter, reservations and advisory-lock symptoms page
+  @kestrel/booking-team; pure gateway errors stay with platform-team's secondary. Page the
+  owner after 10 minutes (SEV1) or 20 minutes (SEV2).
+rubric: |
+  2 = names gateway-429-storm.md AND on-call-policy.md section 5, booking-team for limiter
+      symptoms, with the 10/20 minute timers;
+  1 = finds the runbook but not the owning team or timers (or the reverse);
+  0 = wrong runbook (for example booking-restart) or no escalation.
+judge: rubric
+test_command: null
+federated: false
+grep_bait: ["booking temporarily unavailable"]

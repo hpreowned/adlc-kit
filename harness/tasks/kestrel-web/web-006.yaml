@@ -1,0 +1,26 @@
+id: web-006
+repo: kestrel-web
+cwd: .
+category: cross-repo
+languages: [typescript, python, java]
+tier: 3
+prompt: |
+  Booking started returning an ETA confidence score on shipments weeks ago, but the web app
+  never shows it. Where along the way does it get lost, and which layers still need work?
+expected: |
+  Booking emits eta_confidence (ShipmentResponse, behind the kestrel.booking.features.
+  eta-confidence flag; BOOK-412 done). The gateway drops it: ShipmentOut in
+  kestrel-services/gateway/gateway/models.py is an explicit Pydantic model without the
+  field and is not a pass-through (ADR-0004; GW-118 open). The web app is also stale:
+  Shipment in src/api/types.ts, ShipmentWire in src/api/wire.ts and mapShipment in
+  src/api/mappers.ts have no eta_confidence/etaConfidence (WEB-77 open, blocked on GW-118).
+  So the stale layers are the gateway first, then web; the production flag must stay off.
+rubric: |
+  2 = gateway ShipmentOut drops it AND web types/wire/mapper lack it, with booking as the
+      source (tickets or ADR-0008 rollout order a bonus);
+  1 = identifies only the gateway or only the web layer;
+  0 = blames booking or the UI component only.
+judge: rubric
+test_command: null
+federated: true
+grep_bait: ["eta_confidence", "etaConfidence"]

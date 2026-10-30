@@ -1,0 +1,26 @@
+id: web-004
+repo: kestrel-web
+cwd: .
+category: trace
+languages: [typescript]
+tier: 1
+prompt: |
+  A user clicks Reserve and the backend answers 409. Walk me through what the web code does
+  from the click to what the user sees, and whether anything retries.
+expected: |
+  ShipmentDetail (src/pages/ShipmentDetail.tsx) calls reserve(current.id) from
+  useReserveShipment (src/hooks/useReserveShipment.ts), which runs reserveShipment in
+  src/api/client.ts through useMutation (src/hooks/useMutation.ts). request() sees a non-ok
+  response and throws ApiError(409, ..., detail) built by extractDetail (src/api/errors.ts).
+  useMutation catches it, sets status 'error' and resolves null. ShipmentDetail then shows an
+  ErrorBanner with the RESERVE_ERROR_COPY text from src/lib/copy.ts and the backend detail
+  via describeError, with a Dismiss button (reset). Nothing retries automatically (WEB-71).
+rubric: |
+  2 = full chain click -> useReserveShipment/useMutation -> client request/ApiError ->
+      ErrorBanner with reserve copy + detail, and states there is no auto-retry;
+  1 = covers the ApiError and banner but skips the hook layer or the no-retry point;
+  0 = wrong flow (for example claims the page retries or redirects).
+judge: rubric
+test_command: null
+federated: false
+grep_bait: ["409", "isConflict"]

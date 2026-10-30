@@ -1,0 +1,24 @@
+id: ops-006
+repo: kestrel-ops
+cwd: .
+category: locate
+languages: [docs]
+tier: 3
+prompt: |
+  Where are the contractual request limits for each carrier written down, what are they,
+  and where does the reasoning for how booking's limiter default relates to them live?
+expected: |
+  sla/carrier-sla.md section 2 (also rendered as sla/carrier-sla.pdf) lists the contractual
+  request caps: NSL 40 rps, BLX 25 rps, PCR 15 rps. adr/0007-rate-limit-per-carrier.md
+  explains how the default kestrel.booking.ratelimit.per-carrier-rps = 20 sits below the NSL
+  and BLX caps but above PCR's, hence the PCR override of 8; reviewing NSL/BLX overrides is
+  BOOK-418 (open). runbooks/carrier-onboarding.md requires recording a new carrier's cap in
+  the SLA before go-live.
+rubric: |
+  2 = carrier-sla.md with the three caps AND ADR-0007's default-20 / PCR-8 reasoning;
+  1 = the SLA table with caps but no link to the limiter default (or the reverse);
+  0 = wrong document or wrong numbers.
+judge: rubric
+test_command: null
+federated: false
+grep_bait: ["contractual cap", "request limit"]

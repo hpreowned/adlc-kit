@@ -1,0 +1,27 @@
+id: ops-001
+repo: kestrel-ops
+cwd: .
+category: archaeology
+languages: [docs]
+tier: 3
+prompt: |
+  Why does booking keep a separate rate-limit bucket for each carrier instead of one simple
+  shared limit? What happened that made us change it, and how do the per-carrier numbers
+  relate to what the carriers themselves allow?
+expected: |
+  adr/0007-rate-limit-per-carrier.md, driven by postmortems/2026-08-21-gateway-429-storm.md.
+  Until August 2026 booking had one global token bucket (60 rps). On 2026-08-21 NorthStar
+  Lines (NSL) slowed to 6-12 s hold calls; retries drained the shared bucket and booking
+  answered 429 "carrier capacity exhausted" for every carrier, including healthy BLX and PCR
+  (55% of attempts rejected for 47 minutes, SEV1). Per-carrier buckets (CarrierRateLimiter)
+  isolate a failing carrier (noisy neighbour) and fit differing contractual caps in
+  sla/carrier-sla.md (NSL 40, BLX 25, PCR 15 rps; PCR overridden to 8).
+rubric: |
+  2 = the 2026-08-21 NSL-slowdown incident AND the noisy-neighbour / shared-bucket reason,
+      plus the contractual-cap relation (NSL 40 / BLX 25 / PCR 15, default 20, PCR 8);
+  1 = states the isolation rationale without the incident (or the incident without the why);
+  0 = generic "to avoid overload" with no source.
+judge: rubric
+test_command: null
+federated: false
+grep_bait: ["global", "noisy"]

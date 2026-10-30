@@ -1,0 +1,20 @@
+id: ops-007
+repo: kestrel-ops
+cwd: .
+category: literal
+languages: [docs]
+tier: 3
+prompt: |
+  In the ticket export CSV, what is the exact name of the column that says which team a
+  ticket belongs to?
+expected: |
+  owner_team, the fifth column in the header row of tickets/export.csv
+  (id,title,status,component,owner_team,files,created,closed). Values are CODEOWNERS handles
+  such as @kestrel/booking-team.
+rubric: |
+  2 = owner_team in tickets/export.csv; 1 = correct column but no file, or "component"
+  mentioned as well as the answer without choosing; 0 = wrong column.
+judge: rubric
+test_command: null
+federated: false
+grep_bait: ["owner_team"]

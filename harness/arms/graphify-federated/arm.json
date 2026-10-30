@@ -1,2 +1,18 @@
-{"name": "graphify-federated", "copilot_flags": ["--disable-mcp-server", "serena"], "deny_tools": [], "guard": false, "federated": true,
- "description": "graphify arm + project/org graphs fetched so `adlc query --level` works"}
+{
+ "name": "graphify-federated",
+ "copilot_flags": [
+  "--disable-mcp-server",
+  "serena"
+ ],
+ "deny_tools": [],
+ "guard": false,
+ "federated": true,
+ "description": "graphify arm + project/org graphs fetched so `adlc query --level` works",
+ "strip": {
+  "paths": [
+   ".mcp.json",
+   ".serena"
+  ],
+  "routing": "graph"
+ }
+}

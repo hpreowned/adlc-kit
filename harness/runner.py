@@ -58,6 +58,7 @@ def prepare_working_copy(spec: RunSpec, run_dir: Path) -> Path:
     subprocess.run(["git", "clone", "-q", "--no-hardlinks", str(spec.repo_dir), str(wc)], check=True)
     subprocess.run(["git", "-C", str(wc), "checkout", "-q", spec.baseline_sha], check=True)
     cfg = arm_config(spec.arm)
+    apply_strip(wc, cfg.get("strip") or {})
     if cfg.get("guard"):
         from adlc.guard_hook import hook_json
         hooks = wc / ".github" / "hooks"
@@ -67,6 +68,43 @@ def prepare_working_copy(spec: RunSpec, run_dir: Path) -> Path:
         (wc / "graphify-out").mkdir(exist_ok=True)
         shutil.copy(spec.project_graph, wc / "graphify-out" / "project-graph.json")
     return wc
+
+
+ROUTING_KEEP = {"none": (), "lsp": ("Serena",), "graph": ("Graph", "grep", "adlc stale", "Levels"), "all": ("Graph", "grep", "Serena", "adlc stale", "Levels")}
+
+
+def filter_routing(text: str, mode: str) -> str:
+    """Arm purity: the kit-owned CONTEXT ROUTING section only advertises the tools the
+    arm actually has. `none` removes the section (baseline = AGENTS.md prose only)."""
+    start, end = "<!-- adlc:routing:start -->", "<!-- adlc:routing:end -->"
+    if start not in text or end not in text:
+        return text
+    a, b = text.index(start), text.index(end) + len(end)
+    if mode == "none":
+        return text[:a].rstrip() + "\n\n" + text[b:].lstrip()
+    keep = ROUTING_KEEP.get(mode, ())
+    out, skipping = [], False
+    for line in text[a:b].splitlines():
+        if line.startswith("- **") or line.startswith("- Before") or line.startswith("- Levels"):
+            skipping = not any(k in line for k in keep)
+        elif not line.startswith("  "):
+            skipping = False
+        if not skipping:
+            out.append(line)
+    return text[:a] + "\n".join(out) + text[b:]
+
+
+def apply_strip(wc: Path, strip: dict) -> None:
+    for rel in strip.get("paths", []):
+        target = wc / rel
+        if target.is_dir():
+            shutil.rmtree(target)
+        elif target.exists():
+            target.unlink()
+    mode = strip.get("routing", "all")
+    for agents in [wc / "AGENTS.md", *wc.glob("*/AGENTS.md")]:
+        if agents.exists():
+            agents.write_text(filter_routing(agents.read_text(), mode))
 
 
 def prepare_home(spec: RunSpec, run_dir: Path) -> Path:
@@ -158,7 +196,7 @@ def execute(spec: RunSpec, driver=None) -> RunResult:
     home = prepare_home(spec, run_dir)
     env = child_env(home, run_dir)
     from adlc.stale import check as stale_check
-    freshness = stale_check(wc, "graphify-out/graph.json")
+    freshness = stale_check(spec.repo_dir, "graphify-out/graph.json")  # pristine repo, before arm stripping
     cwd = wc / spec.task.get("cwd", ".")
     t0 = time.time()
     rc, stdout, stderr = driver.run(copilot_args(spec, cfg), cwd, env, spec.timeout)
@@ -180,6 +218,7 @@ def execute(spec: RunSpec, driver=None) -> RunResult:
         "languages": spec.task["languages"], "tier": spec.task["tier"], "arm": spec.arm, "run": spec.run,
         "started_at": datetime.fromtimestamp(t0, timezone.utc).isoformat(timespec="seconds"),
         "exit_code": rc, "wall_ms": wall_ms, "api_duration_ms": metrics.api_duration_ms,
+        "prompt_tokens": metrics.input_tokens + metrics.cache_read_tokens + metrics.cache_write_tokens,
         "input_tokens": metrics.input_tokens, "output_tokens": metrics.output_tokens,
         "cache_read_tokens": metrics.cache_read_tokens, "cache_write_tokens": metrics.cache_write_tokens,
         "reasoning_tokens": metrics.reasoning_tokens,

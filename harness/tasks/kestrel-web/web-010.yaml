@@ -1,0 +1,26 @@
+id: web-010
+repo: kestrel-web
+cwd: .
+category: edit
+languages: [typescript]
+tier: 1
+prompt: |
+  Our money rounding in the web app disagrees with the invoices: exact halves should round
+  away from zero, but roundMoney(1.005) gives 1 and roundMoney(-2.505) gives -2.5 instead
+  of -2.51. Fix the helper so halves round away from zero at two decimals, including values
+  that binary floats get wrong, and add tests for those cases. npm test must pass.
+expected: |
+  src/lib/money.ts: roundMoney no longer uses Math.round(amount * 100) / 100. It rounds half
+  away from zero on a decimal representation (for example Number(Math.round(Number(abs +
+  'e2')) + 'e-2') with the sign reapplied, or integer minor units) so roundMoney(1.005) is
+  1.01 and roundMoney(-2.505) is -2.51. tests/lib/money.test.ts gains cases for 1.005,
+  -2.505, 0.005 and an exact half such as 10.125 -> 10.13; existing roundMoney, formatMoney,
+  sumMoney and parseMoneyInput tests still pass (ADR-0005 target behaviour, PRC-233).
+rubric: |
+  Judged by test_command (exit 0). 2 = exits 0 with the float-edge case 1.005 -> 1.01 and a
+  negative half -> away from zero both tested; 1 = exits 0 but only negative halves or only
+  simple halves are handled; 0 = non-zero exit.
+judge: tests
+test_command: npm test
+federated: false
+grep_bait: ["Math.round"]

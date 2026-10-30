@@ -1,0 +1,27 @@
+id: ops-003
+repo: kestrel-ops
+cwd: .
+category: archaeology
+languages: [docs]
+tier: 3
+prompt: |
+  The booking schema enforces that every shipment points at a real carrier, but the Java
+  entity has no relationship to the carrier table. Is that known, why does it matter, and is
+  anyone going to fix it?
+expected: |
+  Yes, ticket BOOK-377 (tickets/BOOK-377.md; open, booking-team, created 2026-05-19, listed
+  in tickets/export.csv). db/schema.sql declares shipments.carrier_id REFERENCES carriers(id)
+  but the JPA Shipment entity has only Long carrierId, no @ManyToOne/@JoinColumn. Effects:
+  hand-written joins, an extra lookup per shipment to resolve carrier_code, and H2 schema
+  validation cannot detect a broken relation. Found while writing the carrier summary query;
+  deprioritised behind the Q2 carrier summary release (no customer impact); still wanted per
+  the 2026-09-28 comment. Acceptance: lazy @ManyToOne, JSON unchanged, no N+1, mvn -q test green.
+rubric: |
+  2 = BOOK-377 + the missing @ManyToOne on Shipment.carrierId vs the SQL FK + why it matters
+      + current open/deprioritised status;
+  1 = identifies the FK gap without the ticket or its status;
+  0 = wrong FK or says it is fixed.
+judge: rubric
+test_command: null
+federated: false
+grep_bait: ["carrier_id", "ManyToOne"]

@@ -1,0 +1,26 @@
+id: web-009
+repo: kestrel-web
+cwd: .
+category: edit
+languages: [typescript]
+tier: 1
+prompt: |
+  The gateway is about to start sending eta_confidence on shipments (a number from 0 to 1,
+  possibly absent). Make the web app's shipment type, wire type and mapper carry it as
+  etaConfidence, mapping an absent value to null. No UI work is needed. Existing tests that
+  pin the exact mapped shape will need updating, and add a test for present and absent.
+  npm test must pass.
+expected: |
+  src/api/wire.ts: ShipmentWire gains eta_confidence?: number | null. src/api/types.ts:
+  Shipment gains etaConfidence: number | null. src/api/mappers.ts: mapShipment sets
+  etaConfidence: wire.eta_confidence ?? null. tests/api/mappers.test.ts (toEqual shape and
+  the sorted key list) is updated and new cases cover present and absent; tests that go
+  through mapShipment (for example tests/components/ShipmentTable.test.tsx) keep passing.
+rubric: |
+  Judged by test_command (exit 0). 2 = exits 0, absent maps to null, new present/absent
+  cases exist; 1 = exits 0 but pin tests were loosened without covering the new field;
+  0 = non-zero exit.
+judge: tests
+test_command: npm test
+federated: false
+grep_bait: ["eta_confidence"]

@@ -82,3 +82,48 @@ def test_spotcheck_hides_arm():
     recs = [{"run_id": "t-001__graphify__r1", "task": "t-001", "judge_score": 2, "answer": "y", "arm": "graphify"}]
     md = J.spotcheck_md(recs, {"t-001": TASK}, fraction=1.0)
     assert "graphify" not in md.split("## ")[1].split("(ref")[0] and "human: ___" in md
+
+
+ROUTING = """# AGENTS.md
+
+prose
+
+<!-- adlc:routing:start -->
+## Context routing
+- **Graph** (`/graphify query`): structural
+  questions continue here.
+- **grep / file read**: literals.
+- **Serena (LSP)**: symbol edits.
+- Before trusting the graph run `adlc stale`.
+- Levels: project and org.
+<!-- adlc:routing:end -->
+
+```yaml
+adlc:
+  schema: 1
+```
+"""
+
+
+def test_filter_routing_modes():
+    from harness.runner import filter_routing
+    none = filter_routing(ROUTING, "none")
+    assert "Context routing" not in none and "prose" in none and "schema: 1" in none
+    lsp = filter_routing(ROUTING, "lsp")
+    assert "Serena" in lsp and "Graph" not in lsp and "continue here" not in lsp
+    graph = filter_routing(ROUTING, "graph")
+    assert "Graph" in graph and "continue here" in graph and "Serena" not in graph and "adlc stale" in graph
+
+
+def test_arm_strip_removes_other_context(repo, tmp_path):
+    (repo / ".mcp.json").write_text("{}"); (repo / ".github" / "skills" / "graphify").mkdir(parents=True)
+    (repo / ".github" / "skills" / "graphify" / "SKILL.md").write_text("x"); (repo / "AGENTS.md").write_text(ROUTING)
+    subprocess.run(["git", "-C", str(repo), "add", "-A"], check=True); subprocess.run(["git", "-C", str(repo), "commit", "-q", "-m", "ctx"], check=True)
+    from harness.runner import prepare_working_copy
+    for arm, gone, kept in (("baseline", ["graphify-out", ".mcp.json", ".github/skills/graphify"], []),
+                            ("serena", ["graphify-out", ".github/skills/graphify"], [".mcp.json"]),
+                            ("graphify", [".mcp.json"], ["graphify-out", ".github/skills/graphify"])):
+        spec = RunSpec(task=TASK, arm=arm, run=1, repo_dir=repo, baseline_sha=_sha(repo), results_dir=tmp_path / "r")
+        wc = prepare_working_copy(spec, tmp_path / f"run-{arm}")
+        assert all(not (wc / g).exists() for g in gone), arm
+        assert all((wc / k).exists() for k in kept), arm

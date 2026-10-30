@@ -1,0 +1,26 @@
+id: ops-008
+repo: kestrel-ops
+cwd: .
+category: cross-project
+languages: [docs]
+tier: 3
+prompt: |
+  Pricing wants to change the shape of the POST /v1/quote response. Which teams and
+  consumers are affected, and who has to review the change?
+expected: |
+  Consumers of pricing's /v1/quote are the gateway (kestrel-services/gateway, owned by
+  @kestrel/platform-team: PricingClient.quote and the QuoteOut model behind POST /api/quote)
+  and, through /api/quote, the web app (kestrel-web, @kestrel/web-team: Quote type and
+  mapQuote). Pricing-team owns the change itself. adr/0009-team-boundaries-and-codeowners.md
+  rule 4 says a contract change names every consuming team on the ticket and adds them as
+  reviewers; policies/change-management.md section 3 requires owner approval per CODEOWNERS.
+  tickets/PRC-233.md notes gateway and web are informed of quote changes.
+rubric: |
+  2 = gateway/platform-team AND web/web-team (via /api/quote) with the ADR-0009 rule or
+      change-management requirement that they review;
+  1 = names only one consumer, or teams without the web-through-gateway path;
+  0 = only pricing-team, or booking named as a consumer.
+judge: rubric
+test_command: null
+federated: true
+grep_bait: ["/v1/quote", "consumers"]

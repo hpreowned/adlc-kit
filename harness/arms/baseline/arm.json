@@ -1,2 +1,20 @@
-{"name": "baseline", "copilot_flags": ["--disable-mcp-server", "serena"], "deny_tools": [], "guard": false, "federated": false,
- "description": "AGENTS.md only: graphify skill disabled via home settings, Serena MCP disabled by flag"}
+{
+ "name": "baseline",
+ "copilot_flags": [
+  "--disable-mcp-server",
+  "serena"
+ ],
+ "deny_tools": [],
+ "guard": false,
+ "federated": false,
+ "description": "AGENTS.md only: graphify skill disabled via home settings, Serena MCP disabled by flag",
+ "strip": {
+  "paths": [
+   "graphify-out",
+   ".github/skills/graphify",
+   ".mcp.json",
+   ".serena"
+  ],
+  "routing": "none"
+ }
+}

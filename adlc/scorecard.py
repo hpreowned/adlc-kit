@@ -8,7 +8,7 @@ from pathlib import Path
 
 from harness.scorecard import agreement, group, load_records, per_task_table, sparkline, summarise, trend_rows
 
-FOOTNOTE = ("**Metric confidence.** Tokens, model calls, turns, tool calls and API time come from Copilot CLI "
+FOOTNOTE = ("**Metric confidence.** `prompt tokens` = input + cache_read + cache_write per session (Copilot's `input.tokenCount` alone is only the uncached slice — 15–40 tokens in practice — so it is shown separately). Tokens, model calls, turns, tool calls and API time come from Copilot CLI "
             "`events.jsonl` (`session.shutdown`, `session.usage_record`) — primary. `premium_requests` is the billing "
             "number from the same event, cross-checked against the stdout `result` event; it counts prompts × model "
             "multiplier, not model calls (github/copilot-cli#1582 documents the interactive `/usage` undercount; we do not "
@@ -30,13 +30,13 @@ def _fmt(v, kind="int"):
 
 
 def arm_table(recs: list[dict], by: tuple[str, ...]) -> list[str]:
-    hdr = "| " + " | ".join(by) + " | n | tokens in p50/p90 | out p50 | calls p50 | premium p50 | wall p50/p90 | turns p50 | bytes read p50 | correctness | edit pass | tokens CV |"
+    hdr = "| " + " | ".join(by) + " | n | prompt tokens p50/p90 | (uncached in p50) | out p50 | calls p50 | premium p50 | wall p50/p90 | turns p50 | bytes read p50 | correctness | edit pass | tokens CV |"
     lines = [hdr, "|" + "---|" * (hdr.count("|") - 1)]
     for key, rs in sorted(group(recs, by).items(), key=lambda kv: tuple(str(k) for k in kv[0])):
         s = summarise(rs)
-        lines.append("| " + " | ".join(str(k) for k in key) + f" | {s['n']} | {_fmt(s['input_tokens']['p50'])}/{_fmt(s['input_tokens']['p90'])} | {_fmt(s['output_tokens']['p50'])} | "
+        lines.append("| " + " | ".join(str(k) for k in key) + f" | {s['n']} | {_fmt(s['prompt_tokens']['p50'])}/{_fmt(s['prompt_tokens']['p90'])} | {_fmt(s['input_tokens']['p50'])} | {_fmt(s['output_tokens']['p50'])} | "
                      f"{_fmt(s['model_calls']['p50'])} | {_fmt(s['premium_requests']['p50'])} | {_fmt(s['wall_ms']['p50'], 'ms')}/{_fmt(s['wall_ms']['p90'], 'ms')} | "
-                     f"{_fmt(s['turns']['p50'])} | {_fmt(s['bytes_read']['p50'])} | {_fmt(s['correctness'], 'pct')} | {_fmt(s['edit_pass_rate'], 'pct')} | {_fmt(s['input_tokens']['cv'], 'cv')} |")
+                     f"{_fmt(s['turns']['p50'])} | {_fmt(s['bytes_read']['p50'])} | {_fmt(s['correctness'], 'pct')} | {_fmt(s['edit_pass_rate'], 'pct')} | {_fmt(s['prompt_tokens']['cv'], 'cv')} |")
     return lines
 
 
@@ -59,7 +59,7 @@ def render_md(recs: list[dict], spot: dict | None, trend: list[dict]) -> str:
         L += ["", f"**Judge/human agreement** (n={spot['n']}): exact {_fmt(spot['exact'], 'pct')}, within one point {_fmt(spot['within_1'], 'pct')}."]
     if trend:
         L += ["", "## Trend (regress runs)", "", "| metric | sparkline | last | pilot median | drift |", "|---|---|---|---|---|"]
-        for m in ("input_tokens_p50", "model_calls_p50", "wall_ms_p50", "correctness"):
+        for m in ("prompt_tokens_p50", "model_calls_p50", "wall_ms_p50", "correctness"):
             vals = [t.get(m) for t in trend]
             last, base = vals[-1], trend[0].get("pilot_median_" + m) or vals[0]
             drift = ((last - base) / base) if (last is not None and base) else None
