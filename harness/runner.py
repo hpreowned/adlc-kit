@@ -70,6 +70,16 @@ def prepare_working_copy(spec: RunSpec, run_dir: Path) -> Path:
         hooks = wc / ".github" / "hooks"
         hooks.mkdir(parents=True, exist_ok=True)
         (hooks / "adlc-guard.json").write_text(json.dumps(hook_json(strict=False), indent=2))
+    if cfg.get("force_hook"):
+        from adlc.force_hook import hook_json as force_json
+        hooks = wc / ".github" / "hooks"
+        hooks.mkdir(parents=True, exist_ok=True)
+        (hooks / "adlc-force.json").write_text(json.dumps(force_json(), indent=2))
+    if cfg.get("routing_override"):
+        override = (ARMS_DIR / spec.arm / cfg["routing_override"]).read_text().rstrip() + "\n"
+        for agents in [wc / "AGENTS.md", *wc.glob("*/AGENTS.md")]:
+            if agents.exists():
+                agents.write_text(replace_routing(agents.read_text(), override))
     if cfg.get("federated") and spec.project_graph and spec.project_graph.exists():
         (wc / "graphify-out").mkdir(exist_ok=True)
         shutil.copy(spec.project_graph, wc / "graphify-out" / "project-graph.json")
@@ -98,6 +108,15 @@ def filter_routing(text: str, mode: str) -> str:
         if not skipping:
             out.append(line)
     return text[:a] + "\n".join(out) + text[b:]
+
+
+def replace_routing(text: str, body: str) -> str:
+    """Arm-owned routing text in place of the kit's section (markers kept)."""
+    start, end = "<!-- adlc:routing:start -->", "<!-- adlc:routing:end -->"
+    if start not in text or end not in text:
+        return text
+    a, b = text.index(start) + len(start), text.index(end)
+    return text[:a] + "\n" + body + text[b:]
 
 
 def apply_strip(wc: Path, strip: dict) -> None:

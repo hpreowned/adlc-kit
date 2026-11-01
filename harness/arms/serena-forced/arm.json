@@ -1,0 +1,21 @@
+{
+ "name": "serena-forced",
+ "copilot_flags": [],
+ "deny_tools": [
+  "rg",
+  "grep_search",
+  "search_code_subagent"
+ ],
+ "guard": false,
+ "federated": false,
+ "description": "Serena MCP (10 tools) on; text search denied by flag + preToolUse hook; imperative routing section; graphify skill disabled",
+ "strip": {
+  "paths": [
+   "graphify-out",
+   ".github/skills/graphify"
+  ],
+  "routing": "lsp"
+ },
+ "force_hook": true,
+ "routing_override": "ROUTING.md"
+}

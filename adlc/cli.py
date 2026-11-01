@@ -10,7 +10,7 @@ from adlc import __version__
 
 SUBCOMMANDS = [
     "init", "doctor", "baseline", "stale", "eval", "regress", "scorecard",
-    "upgrade", "federate", "query", "pins", "lint", "guard_hook",
+    "upgrade", "federate", "query", "pins", "lint", "guard_hook", "force_hook",
 ]
 
 

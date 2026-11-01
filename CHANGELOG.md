@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- Harness arm `serena-forced`: `adlc force-hook` (preToolUse) denies `rg`/`grep_search`/code-search subagent and grep-family shell commands; imperative Serena routing section via arm `routing_override`. Answers "does Serena help when the agent actually uses it". Never written by `adlc init`.
+
 ## 0.1.4 — 2026-11-01
 - Harness arms carry `skill_profile`; graphify/guard/federated/both force the vendor skill into the working copy so the pilot's numbers stay reproducible after repos switch to lean.
 - `adlc init --skill-profile lean|vendor` (default **lean** after the 2026-11-01 Tier 1 run: 142k vs 204k prompt tokens p50, 90 % vs 85 % correctness, graph queried 31/36 vs 19/36): kit-authored ~2 KB graphify skill (`template/github/skills/graphify-lean/SKILL.md`) at the same path as the vendor one; switching removes `references/`. New harness arm `graphify-lean` swaps it into the working copy so the cost of the 48 KB vendor skill text can be separated from the cost of the graph.
