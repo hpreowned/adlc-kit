@@ -103,8 +103,10 @@ def run_checks(repo: Path) -> list[Check]:
         checks.append(Check("artifact freshness", True, "not built yet — run `adlc baseline`", warn=True))
     else:
         checks.append(Check("artifact freshness", s.exit_code < 2, s.line(), warn=(s.exit_code == 1)))
-    for rel in (".github/workflows/adlc.yml", ".devcontainer/devcontainer.json", "renovate.json", ".graphifyrc"):
+    for rel in (".github/workflows/adlc.yml", "renovate.json", ".graphifyrc"):
         checks.append(Check(rel, (repo / rel).exists(), ""))
+    dc = (repo / ".devcontainer/devcontainer.json").exists()
+    checks.append(Check(".devcontainer/devcontainer.json", dc, "" if dc else "absent — bare-machine mode (init --no-devcontainer)", warn=True))
     return checks
 
 

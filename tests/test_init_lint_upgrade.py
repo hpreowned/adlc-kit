@@ -27,6 +27,19 @@ def test_init_creates_contract_files(repo):
     assert "- serena_repl" in ctx and "find_symbol" not in ctx.split("excluded_tools:")[1]
 
 
+def test_init_no_devcontainer_is_bare_machine_mode(repo, monkeypatch):
+    (repo / "pyproject.toml").write_text("[project]\nname='x'\nversion='0'\n")
+    (repo / "AGENTS.md").unlink()
+    rep = init.run_init(repo, ["graphify", "serena"], devcontainer=False)
+    assert not (repo / ".devcontainer").exists()
+    assert any(p.endswith(".github/workflows/adlc.yml") for _, p in rep.rows)
+    monkeypatch.setenv("GRAPHIFY_BACKEND", "none")
+    dc = next(c for c in doctor.run_checks(repo) if c.name == ".devcontainer/devcontainer.json")
+    assert not dc.ok and dc.warn  # yellow, never red
+    errors, _ = lint.lint(repo)
+    assert errors == []
+
+
 def test_init_is_idempotent_and_keeps_prose(repo):
     _init(repo)
     agents = repo / "AGENTS.md"

@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- `adlc init --no-devcontainer` (bare-machine mode); `adlc doctor` reports a missing devcontainer as WARN, not FAIL. ADOPT.md documents the no-Docker prerequisites — the path the pilot actually ran on.
+
 ## 0.1.2 — 2026-10-30
 - Harness: `session.error` captured per run; runs that did not finish cleanly are excluded from the scorecard and listed; `adlc eval` aborts on the first session error (quota exhaustion) instead of burning the matrix.
 

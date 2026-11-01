@@ -142,12 +142,13 @@ def _path_with_kit_bin() -> str:
     return str(Path(sys.executable).parent) + os.pathsep + os.environ.get("PATH", "")
 
 
-def write_misc(repo: Path, rep: Report, pins: dict) -> None:
+def write_misc(repo: Path, rep: Report, pins: dict, devcontainer: bool = True) -> None:
     k = pins["kit"]
     rep.write(repo / ".graphifyrc", render(_tmpl("graphifyrc.tmpl"), viz_node_limit="5000"))
     rep.write(repo / ".github" / "workflows" / "adlc.yml", render(_tmpl("github/workflows/adlc.yml.tmpl"), kit_repo=k["repo"], kit_ref=k["ref"]))
-    rep.write(repo / ".devcontainer" / "devcontainer.json",
-              render(_tmpl("devcontainer/devcontainer.json.tmpl"), repo_name=repo.name, devcontainer_image=k["devcontainer_image"]))
+    if devcontainer:
+        rep.write(repo / ".devcontainer" / "devcontainer.json",
+                  render(_tmpl("devcontainer/devcontainer.json.tmpl"), repo_name=repo.name, devcontainer_image=k["devcontainer_image"]))
     rep.write(repo / "renovate.json", render(_tmpl("renovate.json.tmpl"), kit_repo=k["repo"], kit_ref=k["ref"]))
     gi = repo / ".gitignore"
     text = gi.read_text() if gi.exists() else ""
@@ -160,7 +161,9 @@ def write_misc(repo: Path, rep: Report, pins: dict) -> None:
     rep.write(gi, text)
 
 
-def run_init(repo: Path, context: list[str]) -> Report:
+def run_init(repo: Path, context: list[str], devcontainer: bool = True) -> Report:
+    """devcontainer=False: bare-machine mode — nothing in the kit reads the devcontainer,
+    it is only a convenience for teams that have Docker."""
     rep = Report()
     pins = load_pins()
     write_agents(repo, rep, context)
@@ -168,7 +171,7 @@ def run_init(repo: Path, context: list[str]) -> Report:
         write_serena(repo, rep, pins)
     if "graphify" in context:
         write_graphify_skill(repo, rep, pins)
-    write_misc(repo, rep, pins)
+    write_misc(repo, rep, pins, devcontainer=devcontainer)
     return rep
 
 
@@ -177,6 +180,7 @@ def add_parser(sub) -> None:
     p.add_argument("--repo", default=".")
     p.add_argument("--context", default="graphify,serena", help="comma list: graphify,serena")
     p.add_argument("--yes", action="store_true", help="no prompts (there are none; kept for muscle memory)")
+    p.add_argument("--no-devcontainer", action="store_true", help="bare machine / no Docker: skip .devcontainer/devcontainer.json")
     p.set_defaults(func=run)
 
 
@@ -189,7 +193,7 @@ def run(args) -> int:
     if is_docs_only(repo) and "serena" in context:
         context = [c for c in context if c != "serena"]
         print("note: no code detected — Serena skipped for this repo (docs-only)")
-    rep = run_init(repo, context)
+    rep = run_init(repo, context, devcontainer=not args.no_devcontainer)
     width = max(len(s) for s, _ in rep.rows)
     for status, path in rep.rows:
         print(f"  {status:<{width}}  {Path(path).relative_to(repo)}")
