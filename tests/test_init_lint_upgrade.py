@@ -16,7 +16,7 @@ def test_init_creates_contract_files(repo):
     rep = _init(repo)
     created = {p for s, p in rep.rows if s == "created"}
     for rel in ("AGENTS.md", ".mcp.json", ".serena/adlc-context.yml", ".serena/project.yml",
-                ".github/skills/graphify/SKILL.md", ".github/workflows/adlc.yml", ".devcontainer/devcontainer.json",
+                ".github/skills/graphify/SKILL.md", ".github/workflows/adlc.yml",
                 "renovate.json", ".graphifyrc", ".gitignore"):
         assert any(p.endswith(rel) for p in created), rel
     c = C.load(repo)
@@ -27,15 +27,11 @@ def test_init_creates_contract_files(repo):
     assert "- serena_repl" in ctx and "find_symbol" not in ctx.split("excluded_tools:")[1]
 
 
-def test_init_no_devcontainer_is_bare_machine_mode(repo, monkeypatch):
-    (repo / "pyproject.toml").write_text("[project]\nname='x'\nversion='0'\n")
-    (repo / "AGENTS.md").unlink()
-    rep = init.run_init(repo, ["graphify", "serena"], devcontainer=False)
+def test_init_writes_no_container_and_doctor_never_asks(repo, monkeypatch):
+    _init(repo)
     assert not (repo / ".devcontainer").exists()
-    assert any(p.endswith(".github/workflows/adlc.yml") for _, p in rep.rows)
     monkeypatch.setenv("GRAPHIFY_BACKEND", "none")
-    dc = next(c for c in doctor.run_checks(repo) if c.name == ".devcontainer/devcontainer.json")
-    assert not dc.ok and dc.warn  # yellow, never red
+    assert not any("devcontainer" in c.name for c in doctor.run_checks(repo))
     errors, _ = lint.lint(repo)
     assert errors == []
 

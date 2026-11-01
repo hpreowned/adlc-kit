@@ -1,7 +1,7 @@
 # Changelog
 
-## Unreleased
-- `adlc init --no-devcontainer` (bare-machine mode); `adlc doctor` reports a missing devcontainer as WARN, not FAIL. ADOPT.md documents the no-Docker prerequisites — the path the pilot actually ran on.
+## 0.1.3 — 2026-11-01
+- Devcontainer removed from the kit (not approved for use in this org; the pilot never ran in one). `adlc init` no longer writes `.devcontainer/`; `adlc doctor` no longer checks it; `adlc-regress.yml` installs its toolchain on a plain runner (`setup` input for the repo's own build tools) instead of a container image. `INSTALL_MINUTES.md` moves to the kit root. ADOPT.md documents the bare-machine prerequisites.
 
 ## 0.1.2 — 2026-10-30
 - Harness: `session.error` captured per run; runs that did not finish cleanly are excluded from the scorecard and listed; `adlc eval` aborts on the first session error (quota exhaustion) instead of burning the matrix.

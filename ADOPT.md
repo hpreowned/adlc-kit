@@ -1,31 +1,27 @@
 # ADOPT.md — make a repo agent-ready in 15 minutes
 
-You have: a repo on GitHub, a `COPILOT_GITHUB_TOKEN` (or a `gh` login), and either the
-ADLC devcontainer or a bare machine. You need nothing else. Nothing below writes to your
-home directory except tool caches.
-
-**Bare machine (no Docker).** This is how the pilot itself ran. You need on `PATH`:
-`git`, `uv`, `copilot` (CLI 1.0.105, see `PINS.md`), and your repo's own build toolchain
-(JDK + Maven, .NET SDK, Node — whatever `AGENTS.md` says the tests need). Serena fetches
-its pinned language servers on first start; C# additionally needs the .NET 10 runtime.
-Export `GRAPHIFY_BACKEND=none`. Then pass `--no-devcontainer` to `adlc init` below so the
-repo does not carry a devcontainer nobody builds; `adlc doctor` shows it as WARN, never FAIL.
+You have: a repo on GitHub, a `COPILOT_GITHUB_TOKEN` (or a `gh` login), and a machine
+with `git`, `uv`, the Copilot CLI (1.0.105, see `PINS.md`) and your repo's own build
+toolchain on `PATH` (JDK + Maven, .NET SDK, Node — whatever `AGENTS.md` says the tests
+need). Serena fetches its pinned language servers on first start; C# additionally needs
+the .NET 10 runtime. Export `GRAPHIFY_BACKEND=none`. No container, no Docker: the kit
+ships none and the pilot ran without one (`INSTALL_MINUTES.md` has the measured costs).
+Nothing below writes to your home directory except tool caches.
 
 Set a timer. Every step prints what it did. If you have to deviate from this page, that
 is a kit bug: note the time and what you did in `results/adoption-test.md` and file it.
 
 ## 0. Install the kit (≈1 min)
 ```bash
-uv tool install "git+https://github.com/kestrel-freight/adlc-kit@v0.1.2"
-adlc --version          # adlc 0.1.2
+uv tool install "git+https://github.com/kestrel-freight/adlc-kit@v0.1.3"
+adlc --version          # adlc 0.1.3
 ```
-Inside the devcontainer `adlc` is already installed — skip this step.
 
 ## 1. Onboard the repo (≈1 min)
 ```bash
 cd <your-repo>
 export COPILOT_GITHUB_TOKEN="$(gh auth token)"   # or paste your token into the env; never into a file
-adlc init                 # add --no-devcontainer on a bare machine
+adlc init
 ```
 It prints every file it created. It is idempotent — run it again any time.
 

@@ -28,7 +28,7 @@
     ]
   },
   "language_servers": {
-    "_comment": "Pinned transitively by the Serena commit (solidlsp downloads exactly these); pre-warmed in the devcontainer with `serena download-ls-dependencies python typescript java csharp`.",
+    "_comment": "Pinned transitively by the Serena commit (solidlsp downloads exactly these); pre-warm on a machine or CI runner with `serena download-ls-dependencies python typescript java csharp`.",
     "python": {
       "name": "pyright",
       "version": "1.1.403",
@@ -54,7 +54,6 @@
   "python": "3.12",
   "kit": {
     "repo": "kestrel-freight/adlc-kit",
-    "ref": "v0.1.2",
-    "devcontainer_image": "ghcr.io/kestrel-freight/adlc-devcontainer:0.1.0"
+    "ref": "v0.1.3"
   }
 }

@@ -1,4 +1,4 @@
 """ADLC kit — one CLI (`adlc`) that wraps graphify, Serena and Copilot for a repo."""
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 SCHEMA_VERSION = 1

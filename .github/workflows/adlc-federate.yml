@@ -4,7 +4,7 @@ name: adlc-federate
 on:
   workflow_call:
     inputs:
-      kit-ref: { type: string, default: "v0.1.2" }
+      kit-ref: { type: string, default: "v0.1.3" }
       level: { type: string, default: "project" }
       org-repo: { type: string, default: "" }
 jobs:

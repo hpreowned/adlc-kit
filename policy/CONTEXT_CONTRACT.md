@@ -24,7 +24,7 @@ be swapped without touching this file or any consuming repo's prose.
    main, carrying `commit_sha` and `generated_at`. Never built by hand on a laptop and
    pushed. The docs semantic pass is the one exception and runs inside a Copilot session.
 5. **Project-level tool configuration only**: `.mcp.json`, `.serena/`, `.github/skills/`,
-   `.graphifyrc`, `.devcontainer/`, `renovate.json`. Nothing a repo depends on lives in a
+   `.graphifyrc`, `renovate.json`. Nothing a repo depends on lives in a
    developer's home directory.
 6. **Committed Serena memories** (`.serena/memories/`) derived from the contract, with the
    same freshness stamp. Agents read them; they do not write them.
