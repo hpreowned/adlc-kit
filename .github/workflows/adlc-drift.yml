@@ -3,7 +3,7 @@ name: adlc-drift
 on:
   workflow_call:
     inputs:
-      kit-ref: { type: string, default: "v0.1.5" }
+      kit-ref: { type: string, default: "v0.1.6" }
       level: { type: string, default: "repo" }      # repo | project | org
 jobs:
   drift:
@@ -12,5 +12,5 @@ jobs:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
       - uses: astral-sh/setup-uv@v5
-      - run: uv tool install --python 3.12 "git+https://github.com/kestrel-freight/adlc-kit@${{ inputs.kit-ref }}"
+      - run: uv tool install --python 3.12 "git+https://github.com/hpreowned/adlc-kit@${{ inputs.kit-ref }}"
       - run: adlc stale --level ${{ inputs.level }} --all

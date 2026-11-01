@@ -1,6 +1,7 @@
 # Changelog
 
-## Unreleased
+## 0.1.6 — 2026-11-01
+- Install and reusable-workflow URLs now point at the real repo `hpreowned/adlc-kit` (was the fictional `kestrel-freight/adlc-kit`; step 0 of ADOPT.md failed for any real consumer). `adlc init` renders the workflow and Renovate preset from `pins.json`, so onboarded repos pick this up on re-init.
 - `adlc eval` resume: invalid records (quota/session error, non-zero exit with no answer, `valid: false`) are re-run instead of skipped; they stay in the results file as history. Found via web-008's nine quota-killed Tier 3 runs, which `make tier3` would have skipped.
 
 ## 0.1.5 — 2026-11-01

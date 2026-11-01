@@ -18,15 +18,15 @@
       "description": "kit ref used by the consuming repo's workflow",
       "fileMatch": ["^\\.github/workflows/adlc\\.yml$"],
       "matchStrings": ["adlc-kit/\\.github/workflows/[a-z-]+\\.yml@(?<currentValue>v[0-9.]+)"],
-      "depNameTemplate": "kestrel-freight/adlc-kit",
+      "depNameTemplate": "hpreowned/adlc-kit",
       "datasourceTemplate": "github-tags"
     }
   ],
   "packageRules": [
     {"matchPackageNames": ["graphifyy"], "groupName": "adlc: graphify", "labels": ["adlc", "tool-bump"], "reviewersFromCodeOwners": true},
     {"matchPackageNames": ["oraios/serena"], "groupName": "adlc: serena", "labels": ["adlc", "tool-bump"], "reviewersFromCodeOwners": true},
-    {"matchPackageNames": ["kestrel-freight/adlc-kit"], "groupName": "adlc: kit", "labels": ["adlc", "kit-bump"], "reviewersFromCodeOwners": true},
-    {"matchPackageNames": ["graphifyy", "oraios/serena", "kestrel-freight/adlc-kit"], "automerge": false, "schedule": ["before 6am on monday"]}
+    {"matchPackageNames": ["hpreowned/adlc-kit"], "groupName": "adlc: kit", "labels": ["adlc", "kit-bump"], "reviewersFromCodeOwners": true},
+    {"matchPackageNames": ["graphifyy", "oraios/serena", "hpreowned/adlc-kit"], "automerge": false, "schedule": ["before 6am on monday"]}
   ],
   "prBodyNotes": ["A tool bump re-runs `adlc regress` (required check). Compare the new trend row with the pilot median before merging; see monitor/RUNBOOK.md."]
 }

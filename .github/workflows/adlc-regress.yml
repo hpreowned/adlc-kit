@@ -4,7 +4,7 @@ name: adlc-regress
 on:
   workflow_call:
     inputs:
-      kit-ref: { type: string, default: "v0.1.5" }
+      kit-ref: { type: string, default: "v0.1.6" }
       arm: { type: string, default: "graphify" }
       setup: { type: string, default: "" }   # shell to install the repo's own toolchain (JDK, .NET, …) before the smoke set
     secrets:
@@ -41,7 +41,7 @@ jobs:
           key: adlc-ls-${{ runner.os }}-${{ inputs.kit-ref }}-${{ hashFiles('.serena/project.yml') }}
           restore-keys: adlc-ls-${{ runner.os }}-${{ inputs.kit-ref }}-
       - run: npm install -g @github/copilot@1.0.105   # pinned; see PINS.md
-      - run: uv tool install --python 3.12 "git+https://github.com/kestrel-freight/adlc-kit@${{ inputs.kit-ref }}"
+      - run: uv tool install --python 3.12 "git+https://github.com/hpreowned/adlc-kit@${{ inputs.kit-ref }}"
       - name: repo toolchain
         if: inputs.setup != ''
         run: ${{ inputs.setup }}
