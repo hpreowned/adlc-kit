@@ -171,8 +171,11 @@ def test_polyglot_repo_gets_service_level_mcp_json(repo, monkeypatch):
     root = json.loads((repo / ".mcp.json").read_text())["mcpServers"]["serena"]["args"]
     svc = json.loads((repo / "gateway" / ".mcp.json").read_text())["mcpServers"]["serena"]["args"]
     assert "--project-from-cwd" in root and ".serena/adlc-context.yml" in root
-    assert "--project" in svc and svc[svc.index("--project") + 1] == ".." and "../.serena/adlc-context.yml" in svc
-    assert "--project-from-cwd" not in svc
+    assert "--project-from-cwd" in svc and ".serena/adlc-context.yml" in svc  # service = its own Serena project
+    import yaml
+    sp = yaml.safe_load((repo / "gateway" / ".serena" / "project.yml").read_text())
+    assert sp["project_name"] == f"{repo.name}-gateway" and sp["language_servers"] == ["python"]
+    assert (repo / "gateway" / ".serena" / "adlc-context.yml").exists()
     errors, _ = lint.lint(repo)
     assert errors == []
     (repo / "gateway" / ".mcp.json").unlink()

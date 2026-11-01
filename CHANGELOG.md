@@ -1,7 +1,7 @@
 # Changelog
 
 ## Unreleased
-- **Fix:** Copilot CLI 1.0.105 loads `.mcp.json` from the working directory only, so in a polyglot repo any task run inside a service directory had no Serena tools (verified: `gateway/` → NONE, repo root → 10 tools). `adlc init` now writes `<service>/.mcp.json` (`--project ..`, `--context ../.serena/adlc-context.yml`); lint and doctor check every kit-owned `.mcp.json`. The pilot's serena-arm numbers on kestrel-services (Tier 1: 15 runs, Tier 2: 9 runs) were measured with Serena absent and are re-labelled invalid.
+- **Fix:** Copilot CLI 1.0.105 loads `.mcp.json` from the working directory only, so in a polyglot repo any task run inside a service directory had no Serena tools (verified: `gateway/` → NONE, repo root → 10 tools). `adlc init` now makes every detected service its own Serena project: `<service>/.mcp.json` plus `<service>/.serena/{adlc-context.yml,project.yml}` with only that service's language servers (the agent passes paths relative to its cwd, and one failing language server no longer takes the whole repo down). Lint and doctor check every kit-owned `.mcp.json` and context file; doctor fails red when csharp is configured without the .NET 10 runtime. The pilot's serena-arm numbers on kestrel-services (Tier 1: 15 runs, Tier 2: 9 runs) were measured with Serena absent and are re-labelled invalid.
 - Harness arm `serena-forced`: `adlc force-hook` (preToolUse) denies `rg`/`grep_search`/code-search subagent and grep-family shell commands; imperative Serena routing section via arm `routing_override`. Answers "does Serena help when the agent actually uses it". Never written by `adlc init`.
 
 ## 0.1.4 — 2026-11-01

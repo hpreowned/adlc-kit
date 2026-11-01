@@ -101,31 +101,42 @@ def _write_mcp(mcp_path: Path, rep: Report, s: dict, tools: list[str], context_p
     rep.write(mcp_path, json.dumps(existing, indent=2) + "\n")
 
 
+def serena_roots(repo: Path) -> list[Path]:
+    """Every directory that is a Serena project: the repo root plus each detected service."""
+    return [repo] + [repo / svc for svc in detect_services(repo)]
+
+
 def mcp_paths(repo: Path) -> list[Path]:
-    """Every .mcp.json the kit owns: root plus one per detected service."""
-    return [repo / ".mcp.json"] + [repo / svc / ".mcp.json" for svc in detect_services(repo)]
+    """Every .mcp.json the kit owns: one per Serena root."""
+    return [r / ".mcp.json" for r in serena_roots(repo)]
 
 
 def write_serena(repo: Path, rep: Report, pins: dict) -> None:
     s = pins["serena"]
     tools = s["tools"]
     # Copilot CLI 1.0.105 loads .mcp.json from the *working directory only* (verified
-    # 2026-11-01: from gateway/ the agent had no serena tools). Polyglot repos therefore get
-    # one per service, pointing Serena at the repo-root project and context.
+    # 2026-11-01: from gateway/ the agent had no serena tools), and the agent passes Serena
+    # paths relative to that cwd. So every service is its own Serena project: own
+    # .mcp.json, own .serena/ (context + project.yml with just its languages). A failing
+    # language server then breaks one service, not the repo.
     _write_mcp(repo / ".mcp.json", rep, s, tools, context_path=".serena/adlc-context.yml", project_args='"--project-from-cwd",')
-    for svc in detect_services(repo):
-        _write_mcp(repo / svc / ".mcp.json", rep, s, tools, context_path="../.serena/adlc-context.yml", project_args='"--project", "..",')
+    for svc, langs in detect_services(repo).items():
+        _write_mcp(repo / svc / ".mcp.json", rep, s, tools, context_path=".serena/adlc-context.yml", project_args='"--project-from-cwd",')
+        _write_serena_dir(repo / svc, rep, tools, name=f"{repo.name}-{svc}", langs=langs)
+    _write_serena_dir(repo, rep, tools, name=repo.name, langs=repo_languages(repo))
+
+
+def _write_serena_dir(root: Path, rep: Report, tools: list[str], name: str, langs: list[str]) -> None:
     excluded = "\n".join(f"  - {t}" for t in ALL_SERENA_TOOLS if t not in tools)
-    rep.write(repo / ".serena" / "adlc-context.yml",
+    rep.write(root / ".serena" / "adlc-context.yml",
               render(_tmpl("serena/adlc-context.yml.tmpl"), n_tools=str(len(tools)), excluded_tools_yaml=excluded))
-    ls = [SERENA_LS[l] for l in repo_languages(repo)] or ["markdown"]
-    rep.write(repo / ".serena" / "project.yml",
-              render(_tmpl("serena/project.yml.tmpl"), repo_name=repo.name, language_servers_json=json.dumps(ls)), owned=False)
-    keep = repo / ".serena" / "memories" / ".gitkeep"
+    ls = [SERENA_LS[l] for l in langs] or ["markdown"]
+    rep.write(root / ".serena" / "project.yml",
+              render(_tmpl("serena/project.yml.tmpl"), repo_name=name, language_servers_json=json.dumps(ls)), owned=False)
+    keep = root / ".serena" / "memories" / ".gitkeep"
     if not keep.exists():
         rep.write(keep, "")
-    gi = repo / ".serena" / ".gitignore"
-    rep.write(gi, "cache/\n*.log\n")
+    rep.write(root / ".serena" / ".gitignore", "cache/\n*.log\n")
 
 
 SKILL_PROFILES = ("vendor", "lean")

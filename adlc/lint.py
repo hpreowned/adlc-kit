@@ -63,8 +63,10 @@ def lint(repo: Path) -> tuple[list[str], list[str]]:
                 fails.append(f"{rel} serena pin != kit pin {pins['serena']['commit'][:12]}")
             if set(entry.get("tools", [])) != set(pins["serena"]["tools"]):
                 fails.append(f"{rel} serena tools allowlist differs from kit allowlist")
-        if not (repo / ".serena" / "adlc-context.yml").exists():
-            fails.append(".serena/adlc-context.yml missing (Serena tool trim)")
+        from adlc.init import serena_roots
+        for root in serena_roots(repo):
+            if not (root / ".serena" / "adlc-context.yml").exists():
+                fails.append(f"{(root / '.serena/adlc-context.yml').relative_to(repo)} missing (Serena tool trim)")
     if "graphify" in c.context and not (repo / ".github" / "skills" / "graphify" / "SKILL.md").exists():
         fails.append(".github/skills/graphify/SKILL.md missing")
     warns += sensitive_edit_warnings(repo, c)
