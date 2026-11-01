@@ -175,7 +175,7 @@ def write_misc(repo: Path, rep: Report, pins: dict) -> None:
     rep.write(gi, text)
 
 
-def run_init(repo: Path, context: list[str], skill_profile: str = "vendor") -> Report:
+def run_init(repo: Path, context: list[str], skill_profile: str = "lean") -> Report:
     rep = Report()
     pins = load_pins()
     write_agents(repo, rep, context)
@@ -192,8 +192,8 @@ def add_parser(sub) -> None:
     p.add_argument("--repo", default=".")
     p.add_argument("--context", default="graphify,serena", help="comma list: graphify,serena")
     p.add_argument("--yes", action="store_true", help="no prompts (there are none; kept for muscle memory)")
-    p.add_argument("--skill-profile", choices=SKILL_PROFILES, default="vendor",
-                   help="graphify skill: 'vendor' (as shipped, 48 KB + references) or 'lean' (kit-authored ~2 KB)")
+    p.add_argument("--skill-profile", choices=SKILL_PROFILES, default="lean",
+                   help="graphify skill: 'lean' (kit-authored ~2 KB, default — measured better on every axis) or 'vendor' (as shipped, 48 KB + references)")
     p.set_defaults(func=run)
 
 

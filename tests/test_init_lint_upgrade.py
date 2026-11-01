@@ -6,10 +6,10 @@ from adlc import doctor, init, lint, upgrade
 from tests.conftest import commit, git
 
 
-def _init(repo, context=("graphify", "serena")):
+def _init(repo, context=("graphify", "serena"), skill_profile="lean"):
     (repo / "pyproject.toml").write_text("[project]\nname='x'\nversion='0'\n")
     (repo / "AGENTS.md").unlink()
-    return init.run_init(repo, list(context))
+    return init.run_init(repo, list(context), skill_profile=skill_profile)
 
 
 def test_init_creates_contract_files(repo):
@@ -22,7 +22,8 @@ def test_init_creates_contract_files(repo):
     c = C.load(repo)
     assert c.schema == 1 and c.context == ["graphify", "serena"]
     skill = (repo / ".github/skills/graphify/SKILL.md").read_text()
-    assert skill.startswith("---") and "ADLC freshness check" in skill and "# /graphify" in skill
+    assert skill.startswith("---\nname: graphify\n") and "ADLC freshness check" in skill and "# /graphify" in skill
+    assert len(skill) < 4096 and not (repo / ".github/skills/graphify/references").exists()  # lean is the default
     ctx = (repo / ".serena/adlc-context.yml").read_text()
     assert "- serena_repl" in ctx and "find_symbol" not in ctx.split("excluded_tools:")[1]
 
@@ -129,8 +130,9 @@ def test_sensitive_edit_without_ticket_warns(repo):
 
 
 def test_lean_skill_profile_replaces_vendor_skill(repo, tmp_path):
-    _init(repo)  # vendor first: SKILL.md + references/
+    _init(repo, skill_profile="vendor")  # vendor first: SKILL.md + references/
     assert (repo / ".github/skills/graphify/references").exists()
+    assert "## Usage" in (repo / ".github/skills/graphify/SKILL.md").read_text()
     rep = init.run_init(repo, ["graphify", "serena"], skill_profile="lean")
     skill = repo / ".github/skills/graphify/SKILL.md"
     assert skill.stat().st_size < 4096 and skill.read_text().startswith("---\nname: graphify\n")
@@ -141,7 +143,7 @@ def test_lean_skill_profile_replaces_vendor_skill(repo, tmp_path):
     assert errors == []
     # the arm swaps the skill in a working copy without touching the source repo
     from harness.runner import RunSpec, arm_config, prepare_working_copy
-    init.run_init(repo, ["graphify", "serena"])  # back to vendor
+    init.run_init(repo, ["graphify", "serena"], skill_profile="vendor")  # back to vendor
     git(repo, "add", "-A"); git(repo, "commit", "-q", "-m", "vendor skill")
     assert arm_config("graphify-lean")["skill_profile"] == "lean"
     spec = RunSpec(task={"id": "t"}, arm="graphify-lean", run=1, repo_dir=repo,

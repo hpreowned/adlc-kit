@@ -1,7 +1,7 @@
 # Changelog
 
 ## Unreleased
-- `adlc init --skill-profile lean|vendor`: kit-authored ~2 KB graphify skill (`template/github/skills/graphify-lean/SKILL.md`) at the same path as the vendor one; switching removes `references/`. New harness arm `graphify-lean` swaps it into the working copy so the cost of the 48 KB vendor skill text can be separated from the cost of the graph.
+- `adlc init --skill-profile lean|vendor` (default **lean** after the 2026-11-01 Tier 1 run: 142k vs 204k prompt tokens p50, 90 % vs 85 % correctness, graph queried 31/36 vs 19/36): kit-authored ~2 KB graphify skill (`template/github/skills/graphify-lean/SKILL.md`) at the same path as the vendor one; switching removes `references/`. New harness arm `graphify-lean` swaps it into the working copy so the cost of the 48 KB vendor skill text can be separated from the cost of the graph.
 - `adlc-regress.yml`: `actions/cache@v4` on uv (tools + cache, keyed on kit ref), npm (keyed on Copilot CLI version) and `~/.serena/language_servers` (keyed on kit ref + `.serena/project.yml`). Toolchain install is paid once per kit bump, not weekly.
 
 ## 0.1.3 — 2026-11-01

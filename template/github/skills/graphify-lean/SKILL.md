@@ -8,7 +8,7 @@ description: "Use for any question about a codebase, its architecture, file rela
 This repo ships a prebuilt graph in `graphify-out/graph.json` (nodes = files, classes,
 functions, routes, docs; edges = calls, imports, references). You never build it here.
 
-## 1. Freshness first (kit-owned)
+## 1. ADLC freshness check (kit-owned)
 
 Run `adlc stale`. Exit 0: use the graph. Exit 1: usable, say how many commits behind.
 Exit 2: run `adlc baseline --incremental` (code only, no LLM), then continue.
