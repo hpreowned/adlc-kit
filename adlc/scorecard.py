@@ -45,7 +45,7 @@ def render_md(recs: list[dict], spot: dict | None, trend: list[dict], invalid: l
     if invalid:
         by = {}
         for r in invalid:
-            by.setdefault((r["task"], (r.get("session_error") or f"exit {r.get('exit_code')}")[:60]), []).append(r["arm"])
+            by.setdefault((r["task"], (r.get("session_error") or r.get("invalid_reason") or f"exit {r.get('exit_code')}")[:90]), []).append(r["arm"])
         L += [f"**Excluded: {len(invalid)} invalid run(s)** (Copilot did not finish cleanly; never pooled):", ""]
         L += [f"- {t} — {why} — arms {sorted(set(a))}" for (t, why), a in sorted(by.items())] + [""]
     if not recs:

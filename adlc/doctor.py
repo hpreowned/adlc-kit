@@ -60,6 +60,12 @@ def ls_checks(repo: Path) -> list[Check]:
         ok = bool(on_path or cached)
         where = f"PATH:{on_path}" if on_path else ("serena-cache" if cached else "not found (Serena downloads on first use)")
         out.append(Check(f"language server: {lang}", ok, where, warn=not ok))
+        if lang == "csharp":
+            # Roslyn LS 5.5 needs the .NET 10 *runtime*; with it missing Serena fails to
+            # initialise the whole project, not just C# (found 2026-11-01 on kestrel-services).
+            r = subprocess.run(["dotnet", "--list-runtimes"], capture_output=True, text=True) if shutil.which("dotnet") else None
+            has10 = bool(r and r.returncode == 0 and any(l.startswith("Microsoft.NETCore.App 10.") for l in r.stdout.splitlines()))
+            out.append(Check(".NET 10 runtime (Roslyn LS)", has10, "found" if has10 else "missing — Serena will fail to start for this repo: dotnet-install.sh --channel 10.0 --runtime dotnet"))
     return out
 
 
