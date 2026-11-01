@@ -1,0 +1,19 @@
+{
+ "name": "graphify-lean",
+ "copilot_flags": [
+  "--disable-mcp-server",
+  "serena"
+ ],
+ "deny_tools": [],
+ "guard": false,
+ "federated": false,
+ "description": "kit-authored ~2 KB graphify skill instead of the 48 KB vendor skill; graphify-out present; Serena off; hook-guard off",
+ "strip": {
+  "paths": [
+   ".mcp.json",
+   ".serena"
+  ],
+  "routing": "graph"
+ },
+ "skill_profile": "lean"
+}

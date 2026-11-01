@@ -114,7 +114,24 @@ def write_serena(repo: Path, rep: Report, pins: dict) -> None:
     rep.write(gi, "cache/\n*.log\n")
 
 
-def write_graphify_skill(repo: Path, rep: Report, pins: dict) -> None:
+SKILL_PROFILES = ("vendor", "lean")
+
+
+def write_lean_skill(repo: Path, rep: Report) -> None:
+    """Kit-authored ~2 KB skill at the same path as the vendor one (routing text unchanged).
+    Drops the vendor references/ dir so Copilot cannot load both."""
+    dest = repo / ".github" / "skills" / "graphify"
+    refs = dest / "references"
+    if refs.exists():
+        shutil.rmtree(refs)
+        rep.rows.append(("removed", str(refs)))
+    rep.write(dest / "SKILL.md", _tmpl("github/skills/graphify-lean/SKILL.md"))
+
+
+def write_graphify_skill(repo: Path, rep: Report, pins: dict, profile: str = "vendor") -> None:
+    if profile == "lean":
+        write_lean_skill(repo, rep)
+        return
     dest = repo / ".github" / "skills" / "graphify"
     with tempfile.TemporaryDirectory() as td:
         r = subprocess.run(["graphify", "install", "--platform", "copilot", "--project"], cwd=td,
@@ -158,14 +175,14 @@ def write_misc(repo: Path, rep: Report, pins: dict) -> None:
     rep.write(gi, text)
 
 
-def run_init(repo: Path, context: list[str]) -> Report:
+def run_init(repo: Path, context: list[str], skill_profile: str = "vendor") -> Report:
     rep = Report()
     pins = load_pins()
     write_agents(repo, rep, context)
     if "serena" in context:
         write_serena(repo, rep, pins)
     if "graphify" in context:
-        write_graphify_skill(repo, rep, pins)
+        write_graphify_skill(repo, rep, pins, profile=skill_profile)
     write_misc(repo, rep, pins)
     return rep
 
@@ -175,6 +192,8 @@ def add_parser(sub) -> None:
     p.add_argument("--repo", default=".")
     p.add_argument("--context", default="graphify,serena", help="comma list: graphify,serena")
     p.add_argument("--yes", action="store_true", help="no prompts (there are none; kept for muscle memory)")
+    p.add_argument("--skill-profile", choices=SKILL_PROFILES, default="vendor",
+                   help="graphify skill: 'vendor' (as shipped, 48 KB + references) or 'lean' (kit-authored ~2 KB)")
     p.set_defaults(func=run)
 
 
@@ -187,7 +206,7 @@ def run(args) -> int:
     if is_docs_only(repo) and "serena" in context:
         context = [c for c in context if c != "serena"]
         print("note: no code detected — Serena skipped for this repo (docs-only)")
-    rep = run_init(repo, context)
+    rep = run_init(repo, context, skill_profile=args.skill_profile)
     width = max(len(s) for s, _ in rep.rows)
     for status, path in rep.rows:
         print(f"  {status:<{width}}  {Path(path).relative_to(repo)}")

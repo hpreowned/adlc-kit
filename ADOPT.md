@@ -64,6 +64,7 @@ The PR runs `adlc-contract-lint` as a required check. After merge, `adlc-baselin
 the graph; nightly `adlc-drift` and weekly `adlc-regress` keep it honest.
 
 ## Later
+- `adlc init --skill-profile lean` swaps the vendor graphify skill for a ~2 KB kit-authored one (same trigger, fewer tokens); see the `graphify-lean` arm in the scorecard before choosing.
 - `adlc upgrade` when the kit bumps its schema (Renovate opens the PR).
 - Docs-heavy repo? Run `/graphify .` once inside a Copilot session to add the semantic
   (docs) layer; `adlc baseline` will keep it and only re-stamp.

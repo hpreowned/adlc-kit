@@ -126,3 +126,27 @@ def test_sensitive_edit_without_ticket_warns(repo):
     (repo / "migrations" / "002.sql").write_text("x")
     git(repo, "add", "-A"); git(repo, "commit", "-q", "-m", "BOOK-377: add fk")
     assert len(lint.sensitive_edit_warnings(repo, c, base="origin/main")) == 1
+
+
+def test_lean_skill_profile_replaces_vendor_skill(repo, tmp_path):
+    _init(repo)  # vendor first: SKILL.md + references/
+    assert (repo / ".github/skills/graphify/references").exists()
+    rep = init.run_init(repo, ["graphify", "serena"], skill_profile="lean")
+    skill = repo / ".github/skills/graphify/SKILL.md"
+    assert skill.stat().st_size < 4096 and skill.read_text().startswith("---\nname: graphify\n")
+    assert "adlc stale" in skill.read_text() and "graphify query" in skill.read_text()
+    assert not (repo / ".github/skills/graphify/references").exists()
+    assert any(s == "removed" for s, _ in rep.rows)
+    errors, _ = lint.lint(repo)
+    assert errors == []
+    # the arm swaps the skill in a working copy without touching the source repo
+    from harness.runner import RunSpec, arm_config, prepare_working_copy
+    init.run_init(repo, ["graphify", "serena"])  # back to vendor
+    git(repo, "add", "-A"); git(repo, "commit", "-q", "-m", "vendor skill")
+    assert arm_config("graphify-lean")["skill_profile"] == "lean"
+    spec = RunSpec(task={"id": "t"}, arm="graphify-lean", run=1, repo_dir=repo,
+                   baseline_sha=git(repo, "rev-parse", "HEAD"), results_dir=tmp_path / "res")
+    wc = prepare_working_copy(spec, tmp_path / "run")
+    assert (wc / ".github/skills/graphify/SKILL.md").stat().st_size < 4096
+    assert not (wc / ".github/skills/graphify/references").exists()
+    assert (repo / ".github/skills/graphify/references").exists()
