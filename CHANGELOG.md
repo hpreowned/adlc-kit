@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+- `adlc-regress.yml`: `actions/cache@v4` on uv (tools + cache, keyed on kit ref), npm (keyed on Copilot CLI version) and `~/.serena/language_servers` (keyed on kit ref + `.serena/project.yml`). Toolchain install is paid once per kit bump, not weekly.
+
 ## 0.1.3 — 2026-11-01
 - Devcontainer removed from the kit (not approved for use in this org; the pilot never ran in one). `adlc init` no longer writes `.devcontainer/`; `adlc doctor` no longer checks it; `adlc-regress.yml` installs its toolchain on a plain runner (`setup` input for the repo's own build tools) instead of a container image. `INSTALL_MINUTES.md` moves to the kit root. ADOPT.md documents the bare-machine prerequisites.
 

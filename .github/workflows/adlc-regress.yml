@@ -22,6 +22,24 @@ jobs:
       - uses: astral-sh/setup-uv@v5
       - uses: actions/setup-node@v4
         with: { node-version: "22" }
+      # Caches: the kit ref pins graphify and the Serena commit, so it is the only key that
+      # matters for uv; Copilot CLI has its own version; Serena's language servers land in
+      # ~/.serena on the first smoke run and are saved post-job for the next week.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            ~/.local/share/uv/tools
+          key: adlc-uv-${{ runner.os }}-${{ inputs.kit-ref }}
+      - uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: adlc-npm-${{ runner.os }}-copilot-1.0.105
+      - uses: actions/cache@v4
+        with:
+          path: ~/.serena/language_servers
+          key: adlc-ls-${{ runner.os }}-${{ inputs.kit-ref }}-${{ hashFiles('.serena/project.yml') }}
+          restore-keys: adlc-ls-${{ runner.os }}-${{ inputs.kit-ref }}-
       - run: npm install -g @github/copilot@1.0.105   # pinned; see PINS.md
       - run: uv tool install --python 3.12 "git+https://github.com/kestrel-freight/adlc-kit@${{ inputs.kit-ref }}"
       - name: repo toolchain

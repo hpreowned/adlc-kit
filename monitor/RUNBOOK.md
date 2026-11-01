@@ -14,7 +14,7 @@
 ## Bump a tool
 Renovate opens the PR (preset `monitor/renovate-preset.json`): graphify (pyproject), Serena commit (`.mcp.json`), kit ref (workflow). `adlc-regress` is the required check.
 1. Read the new `monitor/trend.jsonl` row vs `pilot_median_*`. >15 % worse on tokens or correctness (placeholder threshold, revisit after one quarter of data) → do not merge; open an issue with the row.
-2. Copilot CLI is not Renovate-managed: bump `copilot_cli.version` in `adlc/pins.json`, bump the version in `adlc-regress.yml`'s install step, run `adlc eval --tier 1 --runs 3`, re-verify `harness/EVENTS_SCHEMA.md` against a fresh `events.jsonl` (fields have moved before).
+2. Copilot CLI is not Renovate-managed: bump `copilot_cli.version` in `adlc/pins.json`, bump the version in `adlc-regress.yml`'s install step AND its `adlc-npm-…-copilot-<version>` cache key, run `adlc eval --tier 1 --runs 3`, re-verify `harness/EVENTS_SCHEMA.md` against a fresh `events.jsonl` (fields have moved before).
 3. After merge, `adlc pins` regenerates `PINS.md`; tag the kit; consuming repos pick the tag up via Renovate.
 
 ## Read the trend
