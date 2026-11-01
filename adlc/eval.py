@@ -47,6 +47,19 @@ def baseline_sha(repo_dir: Path) -> str:
     return subprocess.run(["git", "-C", str(repo_dir), "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
 
 
+def _lock_out(out: Path):
+    """Exclusive, non-blocking lock on <out>.lock for the life of the process (2026-11-01:
+    two chains once wrote the same file concurrently and contaminated wall-clock)."""
+    import fcntl
+    fh = open(str(out) + ".lock", "w")
+    try:
+        fcntl.flock(fh, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        fh.close()
+        return None
+    return fh
+
+
 def run_eval(args) -> int:
     from harness import judge as J
     from harness.runner import CopilotDriver, RunSpec, StubDriver, execute
@@ -65,6 +78,10 @@ def run_eval(args) -> int:
         if not os.environ.get("COPILOT_GITHUB_TOKEN"):
             print("COPILOT_GITHUB_TOKEN missing"); return 2
         driver, judge = CopilotDriver(), J.CopilotJudge(model=args.judge_model)
+    lock = _lock_out(out)
+    if lock is None:
+        print(f"another `adlc eval` is already writing {out.name} — refusing to run two evals into one file (wall-clock is a reported metric)")
+        return 2
     done = {json.loads(l)["run_id"] for l in out.read_text().splitlines() if l.strip()} if out.exists() else set()
     project_graph = next(iter(sorted((repos.parent / "org").glob("*/project-graph.json"))), None)
     n = 0

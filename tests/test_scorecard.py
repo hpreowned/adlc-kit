@@ -62,3 +62,14 @@ def test_invalid_runs_are_excluded_and_listed(tmp_path):
     assert len(load_records(tmp_path)) == 1 and len(invalid_records(tmp_path)) == 1
     md = render_md(load_records(tmp_path), None, [], invalid_records(tmp_path))
     assert "Excluded: 1 invalid run" in md and "quota" in md
+
+
+
+def test_eval_refuses_second_writer_on_same_out(tmp_path):
+    from adlc.eval import _lock_out
+    out = tmp_path / "x.jsonl"
+    first = _lock_out(out)
+    assert first is not None
+    assert _lock_out(out) is None  # second writer refused while the first holds it
+    first.close()
+    assert _lock_out(out) is not None
