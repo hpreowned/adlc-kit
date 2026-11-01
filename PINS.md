@@ -13,7 +13,7 @@
 
 ## Locked Python packages (uv.lock)
 
-- `adlc==0.1.4`
+- `adlc==0.1.5`
 - `anytree==2.13.0`
 - `autograd==1.9.1`
 - `beartype==0.18.5`

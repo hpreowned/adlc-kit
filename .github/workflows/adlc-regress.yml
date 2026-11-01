@@ -4,7 +4,7 @@ name: adlc-regress
 on:
   workflow_call:
     inputs:
-      kit-ref: { type: string, default: "v0.1.4" }
+      kit-ref: { type: string, default: "v0.1.5" }
       arm: { type: string, default: "graphify" }
       setup: { type: string, default: "" }   # shell to install the repo's own toolchain (JDK, .NET, …) before the smoke set
     secrets:

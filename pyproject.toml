@@ -1,6 +1,6 @@
 [project]
 name = "adlc"
-version = "0.1.4"
+version = "0.1.5"
 description = "ADLC kit: the one CLI that makes a repo agent-ready (contract, context layer, guardrails, monitoring)."
 readme = "ADOPT.md"
 requires-python = ">=3.12,<3.13"
