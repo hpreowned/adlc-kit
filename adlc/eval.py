@@ -60,6 +60,16 @@ def _lock_out(out: Path):
     return fh
 
 
+
+def _done_runs(out: Path) -> set[str]:
+    """run_ids that count as finished. Invalid records (quota/session error, non-zero exit
+    with no answer, `valid: false`) stay in the file as history but are re-run on resume."""
+    from harness.scorecard import is_valid
+    if not out.exists():
+        return set()
+    recs = [json.loads(l) for l in out.read_text().splitlines() if l.strip()]
+    return {r["run_id"] for r in recs if is_valid(r)}
+
 def run_eval(args) -> int:
     from harness import judge as J
     from harness.runner import CopilotDriver, RunSpec, StubDriver, execute
@@ -82,7 +92,7 @@ def run_eval(args) -> int:
     if lock is None:
         print(f"another `adlc eval` is already writing {out.name} — refusing to run two evals into one file (wall-clock is a reported metric)")
         return 2
-    done = {json.loads(l)["run_id"] for l in out.read_text().splitlines() if l.strip()} if out.exists() else set()
+    done = _done_runs(out)
     project_graph = next(iter(sorted((repos.parent / "org").glob("*/project-graph.json"))), None)
     n = 0
     for t in tasks:

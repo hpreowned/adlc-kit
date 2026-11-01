@@ -73,3 +73,18 @@ def test_eval_refuses_second_writer_on_same_out(tmp_path):
     assert _lock_out(out) is None  # second writer refused while the first holds it
     first.close()
     assert _lock_out(out) is not None
+
+
+def test_eval_resume_reruns_invalid_records(tmp_path):
+    from adlc.eval import _done_runs
+    out = tmp_path / "t3.jsonl"
+    recs = [
+        {"run_id": "a__baseline__r1", "exit_code": 0, "answer": "ok"},
+        {"run_id": "a__baseline__r2", "exit_code": 1, "answer": ""},          # quota-killed
+        {"run_id": "a__baseline__r3", "exit_code": 0, "answer": "x", "valid": False},
+        {"run_id": "a__graphify__r1", "exit_code": 0, "answer": "", "session_error": "boom"},
+    ]
+    out.write_text("\n".join(json.dumps(r) for r in recs) + "\n")
+    assert _done_runs(out) == {"a__baseline__r1"}
+    assert _done_runs(tmp_path / "missing.jsonl") == set()
+
