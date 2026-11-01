@@ -92,15 +92,29 @@ def write_agents(repo: Path, rep: Report, context: list[str]) -> None:
             rep.rows.append(("kept (team-owned)", str(p)))
 
 
+def _write_mcp(mcp_path: Path, rep: Report, s: dict, tools: list[str], context_path: str, project_args: str) -> None:
+    existing = json.loads(mcp_path.read_text()) if mcp_path.exists() else {"mcpServers": {}}
+    entry = json.loads(render(_tmpl("mcp.json.tmpl"), serena_repo=s["repo"], serena_commit=s["commit"],
+                              serena_tools_json=json.dumps(tools), context_path=context_path,
+                              project_args=project_args))["mcpServers"]["serena"]
+    existing.setdefault("mcpServers", {})["serena"] = entry
+    rep.write(mcp_path, json.dumps(existing, indent=2) + "\n")
+
+
+def mcp_paths(repo: Path) -> list[Path]:
+    """Every .mcp.json the kit owns: root plus one per detected service."""
+    return [repo / ".mcp.json"] + [repo / svc / ".mcp.json" for svc in detect_services(repo)]
+
+
 def write_serena(repo: Path, rep: Report, pins: dict) -> None:
     s = pins["serena"]
     tools = s["tools"]
-    mcp_path = repo / ".mcp.json"
-    existing = json.loads(mcp_path.read_text()) if mcp_path.exists() else {"mcpServers": {}}
-    entry = json.loads(render(_tmpl("mcp.json.tmpl"), serena_repo=s["repo"], serena_commit=s["commit"],
-                              serena_tools_json=json.dumps(tools)))["mcpServers"]["serena"]
-    existing.setdefault("mcpServers", {})["serena"] = entry
-    rep.write(mcp_path, json.dumps(existing, indent=2) + "\n")
+    # Copilot CLI 1.0.105 loads .mcp.json from the *working directory only* (verified
+    # 2026-11-01: from gateway/ the agent had no serena tools). Polyglot repos therefore get
+    # one per service, pointing Serena at the repo-root project and context.
+    _write_mcp(repo / ".mcp.json", rep, s, tools, context_path=".serena/adlc-context.yml", project_args='"--project-from-cwd",')
+    for svc in detect_services(repo):
+        _write_mcp(repo / svc / ".mcp.json", rep, s, tools, context_path="../.serena/adlc-context.yml", project_args='"--project", "..",')
     excluded = "\n".join(f"  - {t}" for t in ALL_SERENA_TOOLS if t not in tools)
     rep.write(repo / ".serena" / "adlc-context.yml",
               render(_tmpl("serena/adlc-context.yml.tmpl"), n_tools=str(len(tools)), excluded_tools_yaml=excluded))

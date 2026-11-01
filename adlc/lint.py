@@ -43,24 +43,26 @@ def lint(repo: Path) -> tuple[list[str], list[str]]:
         warns.append(f"artifact {c.artifact} not built yet (`adlc baseline`)")
     pins = load_pins()
     if "serena" in c.context:
-        mcp = repo / ".mcp.json"
-        if not mcp.exists():
-            fails.append(".mcp.json missing but context includes serena")
-        else:
+        from adlc.init import mcp_paths
+        for mcp in mcp_paths(repo):
+            rel = str(mcp.relative_to(repo))
+            if not mcp.exists():
+                fails.append(f"{rel} missing but context includes serena (Copilot loads .mcp.json from cwd only)")
+                continue
             servers = json.loads(mcp.read_text()).get("mcpServers", {})
             for name, srv in servers.items():
                 if srv.get("type") not in (None, "local", "stdio"):
-                    fails.append(f".mcp.json server `{name}` is {srv.get('type')} — hosted MCP is not allowed (GUARDRAILS 5)")
+                    fails.append(f"{rel} server `{name}` is {srv.get('type')} — hosted MCP is not allowed (GUARDRAILS 5)")
                 if "graphify.com" in json.dumps(srv):
-                    fails.append(f".mcp.json server `{name}` points at Graphify Cloud (GUARDRAILS 5)")
+                    fails.append(f"{rel} server `{name}` points at Graphify Cloud (GUARDRAILS 5)")
                 if name != "serena":
-                    fails.append(f".mcp.json server `{name}` has no entry in policy/CLI_FIRST.md")
+                    fails.append(f"{rel} server `{name}` has no entry in policy/CLI_FIRST.md")
             entry = servers.get("serena", {})
             args = " ".join(entry.get("args", []))
             if pins["serena"]["commit"] not in args:
-                fails.append(f".mcp.json serena pin != kit pin {pins['serena']['commit'][:12]}")
+                fails.append(f"{rel} serena pin != kit pin {pins['serena']['commit'][:12]}")
             if set(entry.get("tools", [])) != set(pins["serena"]["tools"]):
-                fails.append(".mcp.json serena tools allowlist differs from kit allowlist")
+                fails.append(f"{rel} serena tools allowlist differs from kit allowlist")
         if not (repo / ".serena" / "adlc-context.yml").exists():
             fails.append(".serena/adlc-context.yml missing (Serena tool trim)")
     if "graphify" in c.context and not (repo / ".github" / "skills" / "graphify" / "SKILL.md").exists():

@@ -6,9 +6,9 @@
       "args": [
         "--from", "git+{{serena_repo}}@{{serena_commit}}",
         "serena", "start-mcp-server",
-        "--context", ".serena/adlc-context.yml",
+        "--context", "{{context_path}}",
         "--agent-interface", "tools",
-        "--project-from-cwd",
+        {{project_args}}
         "--enable-web-dashboard", "false",
         "--enable-gui-log-window", "false"
       ],

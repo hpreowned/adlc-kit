@@ -94,9 +94,11 @@ def run_checks(repo: Path) -> list[Check]:
     checks.append(Check("copilot CLI version == pin", want in cv, f"{cv or 'missing'} vs {want}", warn=bool(cv) and want not in cv))
     checks.append(Check("uvx available (Serena launcher)", bool(shutil.which("uvx")), shutil.which("uvx") or "missing"))
     if "serena" in c.context:
-        mcp = repo / ".mcp.json"
-        pinned = mcp.exists() and pins["serena"]["commit"] in mcp.read_text()
-        checks.append(Check(".mcp.json serena pin", pinned, pins["serena"]["commit"][:12]))
+        from adlc.init import mcp_paths
+        paths = mcp_paths(repo)
+        pinned = all(m.exists() and pins["serena"]["commit"] in m.read_text() for m in paths)
+        where = ", ".join(str(m.relative_to(repo)) for m in paths)
+        checks.append(Check(".mcp.json serena pin (root + services)", pinned, f"{pins['serena']['commit'][:12]} in {where}"))
         checks += ls_checks(repo)
     s = stale_check(repo, c.artifact, c.stale_threshold)
     if not s.exists:

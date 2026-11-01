@@ -160,3 +160,24 @@ def test_lean_skill_profile_replaces_vendor_skill(repo, tmp_path):
     wc2 = prepare_working_copy(spec, tmp_path / "run2")
     assert (wc2 / ".github/skills/graphify/references").exists()
     assert "## Usage" in (wc2 / ".github/skills/graphify/SKILL.md").read_text()
+
+
+def test_polyglot_repo_gets_service_level_mcp_json(repo, monkeypatch):
+    """Copilot CLI loads .mcp.json from the cwd only; a task run inside gateway/ must still see Serena."""
+    (repo / "gateway").mkdir(); (repo / "gateway" / "pyproject.toml").write_text("[project]\nname='g'\nversion='0'\n")
+    (repo / "gateway" / "app.py").write_text("x = 1\n")
+    (repo / "AGENTS.md").unlink()
+    init.run_init(repo, ["graphify", "serena"])
+    root = json.loads((repo / ".mcp.json").read_text())["mcpServers"]["serena"]["args"]
+    svc = json.loads((repo / "gateway" / ".mcp.json").read_text())["mcpServers"]["serena"]["args"]
+    assert "--project-from-cwd" in root and ".serena/adlc-context.yml" in root
+    assert "--project" in svc and svc[svc.index("--project") + 1] == ".." and "../.serena/adlc-context.yml" in svc
+    assert "--project-from-cwd" not in svc
+    errors, _ = lint.lint(repo)
+    assert errors == []
+    (repo / "gateway" / ".mcp.json").unlink()
+    errors, _ = lint.lint(repo)
+    assert any("gateway/.mcp.json missing" in e for e in errors)
+    monkeypatch.setenv("GRAPHIFY_BACKEND", "none")
+    pin = next(c for c in doctor.run_checks(repo) if c.name.startswith(".mcp.json serena pin"))
+    assert not pin.ok and "gateway/.mcp.json" in pin.detail
