@@ -19,7 +19,10 @@ def template_dir() -> Path:
 
 
 def harness_dir() -> Path:
-    return kit_root() / "harness"
+    """The harness ships as a real package (imported as `harness`), so locate it by import:
+    works in a source checkout, an editable install and an installed wheel alike."""
+    import harness
+    return Path(harness.__file__).resolve().parent
 
 
 def monitor_dir() -> Path:

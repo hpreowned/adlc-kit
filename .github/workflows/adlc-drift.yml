@@ -3,7 +3,7 @@ name: adlc-drift
 on:
   workflow_call:
     inputs:
-      kit-ref: { type: string, default: "v0.1.6" }
+      kit-ref: { type: string, default: "v0.1.7" }
       level: { type: string, default: "repo" }      # repo | project | org
 jobs:
   drift:

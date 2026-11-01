@@ -54,6 +54,6 @@
   "python": "3.12",
   "kit": {
     "repo": "hpreowned/adlc-kit",
-    "ref": "v0.1.6"
+    "ref": "v0.1.7"
   }
 }

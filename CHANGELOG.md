@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.7 — 2026-11-01
+- **The wheel was never installable.** `harness` shipped as data under `adlc/_data/` but `eval`, `regress` and `scorecard` import it as a top-level package; `uv tool install` from GitHub died on import. `harness` is now a real package in the wheel and `harness_dir()` resolves it by import. Every prior tag (v0.1.0–v0.1.6) only ever worked from the editable venv.
+- New test builds the wheel, installs it into a clean venv and runs `adlc init` on a scratch repo. CI runs it.
+- `PINS.md` is rendered from `uv.lock`; the lock is now refreshed before `adlc pins` (0.1.6 shipped a PINS.md saying 0.1.5).
+
 ## 0.1.6 — 2026-11-01
 - Install and reusable-workflow URLs now point at the real repo `hpreowned/adlc-kit` (was the fictional `kestrel-freight/adlc-kit`; step 0 of ADOPT.md failed for any real consumer). `adlc init` renders the workflow and Renovate preset from `pins.json`, so onboarded repos pick this up on re-init.
 - `adlc eval` resume: invalid records (quota/session error, non-zero exit with no answer, `valid: false`) are re-run instead of skipped; they stay in the results file as history. Found via web-008's nine quota-killed Tier 3 runs, which `make tier3` would have skipped.
