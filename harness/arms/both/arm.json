@@ -8,5 +8,6 @@
  "strip": {
   "paths": [],
   "routing": "all"
- }
+ },
+ "skill_profile": "vendor"
 }

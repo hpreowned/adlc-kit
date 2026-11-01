@@ -14,5 +14,6 @@
    ".serena"
   ],
   "routing": "graph"
- }
+ },
+ "skill_profile": "vendor"
 }

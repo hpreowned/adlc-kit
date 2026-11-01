@@ -152,3 +152,11 @@ def test_lean_skill_profile_replaces_vendor_skill(repo, tmp_path):
     assert (wc / ".github/skills/graphify/SKILL.md").stat().st_size < 4096
     assert not (wc / ".github/skills/graphify/references").exists()
     assert (repo / ".github/skills/graphify/references").exists()
+    # and the vendor arm restores the shipped skill even when the repo has committed lean
+    init.run_init(repo, ["graphify", "serena"])  # default = lean
+    git(repo, "add", "-A"); git(repo, "commit", "-q", "-m", "lean skill")
+    spec = RunSpec(task={"id": "t"}, arm="graphify", run=1, repo_dir=repo,
+                   baseline_sha=git(repo, "rev-parse", "HEAD"), results_dir=tmp_path / "res2")
+    wc2 = prepare_working_copy(spec, tmp_path / "run2")
+    assert (wc2 / ".github/skills/graphify/references").exists()
+    assert "## Usage" in (wc2 / ".github/skills/graphify/SKILL.md").read_text()

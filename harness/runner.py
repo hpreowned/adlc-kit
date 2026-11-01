@@ -60,9 +60,11 @@ def prepare_working_copy(spec: RunSpec, run_dir: Path) -> Path:
     subprocess.run(["git", "-C", str(wc), "checkout", "-q", spec.baseline_sha], check=True)
     cfg = arm_config(spec.arm)
     apply_strip(wc, cfg.get("strip") or {})
-    if cfg.get("skill_profile") == "lean":
-        from adlc.init import Report, write_lean_skill
-        write_lean_skill(wc, Report())
+    # Arms are self-describing: the skill they measure is written into the working copy
+    # regardless of which profile the repo has committed (vendor = graphify as shipped).
+    if cfg.get("skill_profile") in ("lean", "vendor") and (wc / ".github" / "skills" / "graphify").exists():
+        from adlc.init import Report, load_pins, write_graphify_skill
+        write_graphify_skill(wc, Report(), load_pins(), profile=cfg["skill_profile"])
     if cfg.get("guard"):
         from adlc.guard_hook import hook_json
         hooks = wc / ".github" / "hooks"
