@@ -6,7 +6,7 @@ import html
 import json
 from pathlib import Path
 
-from harness.scorecard import agreement, group, invalid_records, load_records, per_task_table, sparkline, summarise, trend_rows
+from harness.scorecard import agreement, duplicate_records, group, invalid_records, load_records, per_task_table, sparkline, summarise, trend_rows
 
 FOOTNOTE = ("**Metric confidence.** `prompt tokens` = input + cache_read + cache_write per session (Copilot's `input.tokenCount` alone is only the uncached slice — 15–40 tokens in practice — so it is shown separately). Tokens, model calls, turns, tool calls and API time come from Copilot CLI "
             "`events.jsonl` (`session.shutdown`, `session.usage_record`) — primary. `premium_requests` is the billing "
@@ -40,7 +40,7 @@ def arm_table(recs: list[dict], by: tuple[str, ...]) -> list[str]:
     return lines
 
 
-def render_md(recs: list[dict], spot: dict | None, trend: list[dict], invalid: list[dict] | None = None) -> str:
+def render_md(recs: list[dict], spot: dict | None, trend: list[dict], invalid: list[dict] | None = None, dups: list[dict] | None = None) -> str:
     L = ["# ADLC scorecard", "", f"{len(recs)} valid runs · tasks {len({r['task'] for r in recs})} · arms {sorted({r['arm'] for r in recs})}", ""]
     if invalid:
         by = {}
@@ -48,6 +48,11 @@ def render_md(recs: list[dict], spot: dict | None, trend: list[dict], invalid: l
             by.setdefault((r["task"], (r.get("session_error") or r.get("invalid_reason") or f"exit {r.get('exit_code')}")[:90]), []).append(r["arm"])
         L += [f"**Excluded: {len(invalid)} invalid run(s)** (Copilot did not finish cleanly; never pooled):", ""]
         L += [f"- {t} — {why} — arms {sorted(set(a))}" for (t, why), a in sorted(by.items())] + [""]
+    if dups:
+        L += [f"**Superseded: {len(dups)} duplicate valid record(s)** (same run_id as an earlier valid run — an accidental re-run; first valid record kept, these never pooled):", ""]
+        for r in dups:
+            L.append(f"- `{r['run_id']}` started {r.get('started_at','?')}")
+        L.append("")
     if not recs:
         return "\n".join(L + ["_no results yet_", ""])
     L += ["## By arm", ""] + arm_table(recs, ("arm",)) + ["", "## By arm × category", ""] + arm_table(recs, ("arm", "category"))
@@ -142,9 +147,10 @@ def run(args) -> int:
     results = Path(args.results)
     recs = load_records(results)
     invalid = invalid_records(results)
+    dups = duplicate_records(results)
     spot = agreement(Path(args.spotcheck).read_text(), recs) if args.spotcheck and Path(args.spotcheck).exists() else None
     trend = trend_rows(Path(args.trend_file)) if args.trend else []
-    md = render_md(recs, spot, trend, invalid)
+    md = render_md(recs, spot, trend, invalid, dups)
     if args.out:
         Path(args.out).write_text(md)
         print(f"wrote {args.out}")

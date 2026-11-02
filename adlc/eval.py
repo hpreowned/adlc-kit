@@ -61,75 +61,19 @@ def _lock_out(out: Path):
 
 
 
-def _done_runs(out: Path) -> set[str]:
-    """run_ids that count as finished. Invalid records (quota/session error, non-zero exit
-    with no answer, `valid: false`) stay in the file as history but are re-run on resume."""
+def _done_runs(results: Path) -> set[str]:
+    """run_ids that count as finished, across EVERY results/*.jsonl — the --out file is where
+    new records go, not the only place old ones live. Invalid records (quota/session error,
+    non-zero exit with no answer, `valid: false`) stay as history and are re-run on resume."""
     from harness.scorecard import is_valid
-    if not out.exists():
-        return set()
-    recs = [json.loads(l) for l in out.read_text().splitlines() if l.strip()]
-    return {r["run_id"] for r in recs if is_valid(r)}
-
-def run_eval(args) -> int:
-    from harness import judge as J
-    from harness.runner import CopilotDriver, RunSpec, StubDriver, execute
-    tasks = select_tasks(args)
-    if not tasks:
-        print("no tasks selected"); return 2
-    arms = args.arms.split(",") if args.arms else TIER_ARMS.get(args.tier or 1, ARMS_DEFAULT)
-    results = Path(args.results).resolve()
-    results.mkdir(parents=True, exist_ok=True)
-    repos = Path(args.repos).resolve()
-    out = results / (args.out or f"{datetime.now(timezone.utc).strftime('%Y-%m-%d')}.jsonl")
-    if args.dry_run:
-        driver = StubDriver(harness_dir() / "tests" / "fixtures" / "events_smoke.jsonl", answer="dry-run answer")
-        judge = J.StubJudge()
-    else:
-        if not os.environ.get("COPILOT_GITHUB_TOKEN"):
-            print("COPILOT_GITHUB_TOKEN missing"); return 2
-        driver, judge = CopilotDriver(), J.CopilotJudge(model=args.judge_model)
-    lock = _lock_out(out)
-    if lock is None:
-        print(f"another `adlc eval` is already writing {out.name} — refusing to run two evals into one file (wall-clock is a reported metric)")
-        return 2
-    done = _done_runs(out)
-    project_graph = next(iter(sorted((repos.parent / "org").glob("*/project-graph.json"))), None)
-    n = 0
-    for t in tasks:
-        repo_dir = repos / t["repo"]
-        if not repo_dir.exists():
-            print(f"skip {t['id']}: {repo_dir} missing"); continue
-        sha = baseline_sha(repo_dir)
-        for arm in arms:
-            if t.get("federated") and arm not in ("graphify-federated", "both") and args.tier == 3:
-                pass
-            for r in range(1, args.runs + 1):
-                rid = f"{t['id']}__{arm}__r{r}"
-                if rid in done:
-                    continue
-                spec = RunSpec(task=t, arm=arm, run=r, repo_dir=repo_dir, baseline_sha=sha, results_dir=results,
-                               project_graph=project_graph, timeout=args.timeout, model=args.model, tasks_root=_tasks_root(args))
-                res = execute(spec, driver)
-                if res.record.get("session_error"):
-                    with out.open("a") as fh:
-                        fh.write(json.dumps({**res.record, "dry_run": bool(args.dry_run)}) + "\n")
-                    print(f"{rid}: ABORTING — Copilot session error: {res.record['session_error']}")
-                    print("eval: stopped early; records so far are kept, the failed run is marked invalid. Re-run resumes.")
-                    return 3
-                rec = J.judge_record(res.record, t, judge)
-                rec["dry_run"] = bool(args.dry_run)
-                (res.raw_dir / "record.json").write_text(json.dumps(rec, indent=2))
-                with out.open("a") as fh:
-                    fh.write(json.dumps(rec) + "\n")
-                n += 1
-                print(f"{rid}: score={rec.get('judge_score')} tokens={rec['input_tokens']}+{rec['output_tokens']} calls={rec['model_calls']} wall={rec['wall_ms']}ms")
-    if n:
-        from harness.tasklint import load_tasks
-        allt = {x["id"]: x for x in load_tasks(_tasks_root(args))}
-        recs = [json.loads(l) for l in out.read_text().splitlines() if l.strip()]
-        (results / "spotcheck.md").write_text(J.spotcheck_md(recs, allt))
-    print(f"eval: {n} new run(s) → {out}")
-    return 0
+    done: set[str] = set()
+    for f in sorted(results.glob("*.jsonl")):
+        for l in f.read_text().splitlines():
+            if l.strip():
+                r = json.loads(l)
+                if is_valid(r):
+                    done.add(r["run_id"])
+    return done
 
 
 def add_parser(sub) -> None:

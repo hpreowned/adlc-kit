@@ -13,8 +13,8 @@ is a kit bug: note the time and what you did in `results/adoption-test.md` and f
 
 ## 0. Install the kit (≈1 min)
 ```bash
-uv tool install "git+https://github.com/hpreowned/adlc-kit@v0.1.7"
-adlc --version          # adlc 0.1.7
+uv tool install "git+https://github.com/hpreowned/adlc-kit@v0.1.8"
+adlc --version          # adlc 0.1.8
 ```
 
 ## 1. Onboard the repo (≈1 min)

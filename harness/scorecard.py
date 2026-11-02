@@ -18,13 +18,39 @@ def is_valid(r: dict) -> bool:
     return not (r.get("exit_code", 0) != 0 and not r.get("answer"))
 
 
-def load_records(results: Path, include_invalid: bool = False) -> list[dict]:
+def _all_records(results: Path) -> list[dict]:
     recs = []
     for p in sorted(results.glob("*.jsonl")):
         for line in p.read_text().splitlines():
             if line.strip():
                 recs.append(json.loads(line))
-    return recs if include_invalid else [r for r in recs if is_valid(r)]
+    return recs
+
+
+def dedupe(recs: list[dict]) -> tuple[list[dict], list[dict]]:
+    """One valid record per run_id: the FIRST valid one by started_at. A later valid record
+    for the same run_id (an accidental rerun) is a superseded duplicate — returned separately,
+    never pooled — so published numbers do not move when someone re-runs a tier."""
+    valid = sorted((r for r in recs if is_valid(r)), key=lambda r: (r.get("started_at") or "", r["run_id"]))
+    kept: dict[str, dict] = {}
+    dups: list[dict] = []
+    for r in valid:
+        if r["run_id"] in kept:
+            dups.append(r)
+        else:
+            kept[r["run_id"]] = r
+    return list(kept.values()), dups
+
+
+def load_records(results: Path, include_invalid: bool = False) -> list[dict]:
+    recs = _all_records(results)
+    if include_invalid:
+        return recs
+    return dedupe(recs)[0]
+
+
+def duplicate_records(results: Path) -> list[dict]:
+    return dedupe(_all_records(results))[1]
 
 
 def invalid_records(results: Path) -> list[dict]:

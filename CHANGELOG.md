@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.8 — 2026-11-02
+- **`adlc eval` resume scans every `results/*.jsonl`**, not only the `--out` file. Before, a tier target pointed at a file that did not exist on a fresh clone and re-ran the whole tier (135 runs instead of 9 on the pilot's Tier 3).
+- Scorecard keeps the first valid record per `run_id`; later valid duplicates are listed as superseded and never pooled, so published numbers do not move under an accidental re-run.
+
 ## 0.1.7 — 2026-11-01
 - **The wheel was never installable.** `harness` shipped as data under `adlc/_data/` but `eval`, `regress` and `scorecard` import it as a top-level package; `uv tool install` from GitHub died on import. `harness` is now a real package in the wheel and `harness_dir()` resolves it by import. Every prior tag (v0.1.0–v0.1.6) only ever worked from the editable venv.
 - New test builds the wheel, installs it into a clean venv and runs `adlc init` on a scratch repo. CI runs it.

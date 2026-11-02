@@ -75,16 +75,30 @@ def test_eval_refuses_second_writer_on_same_out(tmp_path):
     assert _lock_out(out) is not None
 
 
-def test_eval_resume_reruns_invalid_records(tmp_path):
+def test_eval_resume_scans_every_results_file_and_reruns_invalid(tmp_path):
     from adlc.eval import _done_runs
-    out = tmp_path / "t3.jsonl"
-    recs = [
-        {"run_id": "a__baseline__r1", "exit_code": 0, "answer": "ok"},
-        {"run_id": "a__baseline__r2", "exit_code": 1, "answer": ""},          # quota-killed
+    results = tmp_path
+    (results / "2026-10-30-tier3.jsonl").write_text("\n".join(json.dumps(r) for r in [
+        {"run_id": "a__baseline__r1", "exit_code": 0, "answer": "ok", "started_at": "2026-10-30T10:00:00+00:00"},
+        {"run_id": "a__baseline__r2", "exit_code": 1, "answer": ""},                     # quota-killed
         {"run_id": "a__baseline__r3", "exit_code": 0, "answer": "x", "valid": False},
-        {"run_id": "a__graphify__r1", "exit_code": 0, "answer": "", "session_error": "boom"},
-    ]
-    out.write_text("\n".join(json.dumps(r) for r in recs) + "\n")
-    assert _done_runs(out) == {"a__baseline__r1"}
-    assert _done_runs(tmp_path / "missing.jsonl") == set()
+    ]) + "\n")
+    (results / "2026-11-01-other.jsonl").write_text(json.dumps(
+        {"run_id": "a__graphify__r1", "exit_code": 0, "answer": "", "session_error": "boom"}) + "\n")
+    # the --out file for a new run does not exist yet; resume must still see the old files
+    assert _done_runs(results) == {"a__baseline__r1"}
+    assert _done_runs(tmp_path / "empty") == set()
+
+
+def test_scorecard_keeps_first_valid_record_per_run_id_and_lists_duplicates(tmp_path):
+    from harness.scorecard import duplicate_records, load_records
+    early = {"run_id": "a__baseline__r1", "exit_code": 0, "answer": "first", "started_at": "2026-10-30T10:00:00+00:00"}
+    later = {"run_id": "a__baseline__r1", "exit_code": 0, "answer": "rerun", "started_at": "2026-11-02T10:00:00+00:00"}
+    fixed = {"run_id": "a__baseline__r2", "exit_code": 0, "answer": "ok", "started_at": "2026-11-02T10:00:00+00:00"}
+    broken = {"run_id": "a__baseline__r2", "exit_code": 1, "answer": "", "started_at": "2026-10-30T10:00:00+00:00"}
+    (tmp_path / "z-later.jsonl").write_text(json.dumps(later) + "\n" + json.dumps(fixed) + "\n")
+    (tmp_path / "a-early.jsonl").write_text(json.dumps(early) + "\n" + json.dumps(broken) + "\n")
+    kept = {r["run_id"]: r["answer"] for r in load_records(tmp_path)}
+    assert kept == {"a__baseline__r1": "first", "a__baseline__r2": "ok"}   # first valid wins; invalid never blocks a fix
+    assert [r["answer"] for r in duplicate_records(tmp_path)] == ["rerun"]
 
